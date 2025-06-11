@@ -543,33 +543,27 @@ function App() {
               ) : (
                 filteredProducts.map(product => (
                   <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
-                    <Card>
-                      <CardMedia
-                        component="img"
-                        alt={product.name}
-                        image={product.image || 'https://via.placeholder.com/150'}
-                        title={product.name}
-                      />
-                      <CardContent>
-                        <Typography gutterBottom variant="h5" component="div">
+                    <Card sx={{ p: 1, minHeight: 150 }}>
+                      <CardContent sx={{ pb: 1 }}>
+                        <Typography gutterBottom variant="h6" component="div">
                           {product.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {product.description || 'لا يوجد وصف لهذا المنتج.'}
                         </Typography>
-                        <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
+                        <Typography variant="subtitle1" color="primary" sx={{ mt: 1 }}>
                           {product.price} ريال
                         </Typography>
                       </CardContent>
-                      <CardActions sx={{ justifyContent: 'flex-end', p: 2 }}>
+                      <CardActions sx={{ justifyContent: 'flex-end', p: 1 }}>
                         <Button
                           variant="contained"
                           color="primary"
                           startIcon={<AddIcon />}
                           onClick={() => addToCart(product)}
-                          sx={{ borderRadius: 2 }}
+                          sx={{ borderRadius: 2, fontSize: '0.8rem', px: 2 }}
                         >
-                          أضف إلى السلة
+                          أضف
                         </Button>
                       </CardActions>
                     </Card>

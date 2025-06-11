@@ -165,6 +165,21 @@ function App() {
   const [filteredProducts, setFilteredProducts] = useState([]); // المنتجات بعد التصفية بالفئة
   const [categories, setCategories] = useState([]); // قائمة الفئات المتاحة
   const [selectedCategory, setSelectedCategory] = useState('all'); // الفئة المختارة حاليًا
+
+  // قائمة الفئات الثابتة (تظهر دائمًا)
+  const staticCategories = [
+    'مشروبات ساخنة',
+    'مشروبات باردة',
+    'الموهيتو',
+    'بان كيك',
+    'السموذي',
+    'مشروبات الطاقة',
+    'الشاورما',
+    'السندويتشات',
+    'العصائر الطبيعية',
+    'دجاج الماكينة',
+    'وجبات خفيفة'
+  ];
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -266,9 +281,12 @@ function App() {
       .then(data => {
         if (data) {
           setProducts(data);
-          // استخراج الفئات الفريدة من المنتجات
-          const uniqueCategories = ['all', ...new Set(data.map(p => p.category))];
-          setCategories(uniqueCategories);
+          // استخراج الفئات الفريدة من المنتجات ودمجها مع الفئات الثابتة
+          const uniqueCategories = Array.from(new Set([
+            ...staticCategories,
+            ...data.map(p => p.category)
+          ]));
+          setCategories(['all', ...uniqueCategories]);
         }
       })
       .catch(error => console.error('Error fetching products:', error));

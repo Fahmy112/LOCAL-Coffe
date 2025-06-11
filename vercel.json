@@ -1,29 +1,26 @@
-
+{
+    "version": 2,
+    "builds": [
     {
-        "version": 2,
-        "builds": [
-        {
-            "src": "backend/server.js",
-            "use": "@vercel/node"
-        },
-        {
-            "src": "/frontend/frontend/package.json",
-            "use": "@vercel/static-build",
-            "config": { "distDir": "build" }
-        }
-        ],
-        "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "backend/server.js"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/frontend/frontend/$1"
-        }
-        ],
-        "env": {
-            "JWT_SECRET": "JWT_SECRET",   
-            "MONGO_URI": "MONGO_URI"    
+        "src": "server/server.js",
+        "use": "@vercel/node"
+    },
+    {
+        "src": "client/package.json",
+        "use": "@vercel/static-build",
+        "config": {
+        "distDir": "build"
         }
     }
+    ],
+    "routes": [
+    {
+        "src": "/api/(.*)",
+        "dest": "server/server.js"
+    },
+    {
+        "src": "/(.*)",
+        "dest": "/client/$1"
+    }
+    ]
+}

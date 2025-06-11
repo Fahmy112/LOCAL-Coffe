@@ -4,7 +4,9 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField
 } from '@mui/material';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? '/api' // هذا للتشغيل على Vercel، حيث تكون الواجهة الأمامية والخلفية على نفس النطاق
+  : 'http://localhost:5000/api'; // للتشغيل المحلي
 
 const ReportsDashboard = ({ token, userRole }) => {
     const [dailySales, setDailySales] = useState(null);

@@ -142,8 +142,8 @@ async function initSampleData() {
 
 // Server port
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+module.exports = app;
+// app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
 // *** ملاحظة هامة: يجب أن تكون موديلات User, Order, Ingredient موجودة أو معرفة في ملفات منفصلة
 // لتجنب الأخطاء في server.js عند استخدامها في initSampleData.

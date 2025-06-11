@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css'; // تأكد من تحديث هذا الملف بالتنسيقات الجديدة
 import {
@@ -176,7 +177,9 @@ function App() {
   const [showInventory, setShowInventory] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? '/api' // هذا للتشغيل على Vercel، حيث تكون الواجهة الأمامية والخلفية على نفس النطاق
+  : 'http://localhost:5000/api'; // للتشغيل المحلي
 
   // --- تأثيرات المكون (Component Effects) ---
 

@@ -11,7 +11,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove'; // لإضافة/إزالة حقول المكونات
 
-const API_BASE_URL = 'http://localhost:5000/api'; // تأكد من تطابق هذا مع الـ Backend
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? '/api' // هذا للتشغيل على Vercel، حيث تكون الواجهة الأمامية والخلفية على نفس النطاق
+  : 'http://localhost:5000/api'; // للتشغيل المحلي
 
 const InventoryManagement = ({ token, userRole }) => {
   const [products, setProducts] = useState([]); // المنتجات التي يتم عرضها في الجدول

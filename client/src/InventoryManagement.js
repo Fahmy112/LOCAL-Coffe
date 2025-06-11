@@ -325,7 +325,7 @@ const InventoryManagement = ({ token, userRole }) => {
               <TableCell>الفئة</TableCell>
               <TableCell align="right">السعر (ريال)</TableCell>
               <TableCell align="right">المخزون</TableCell>
-              <TableCell>الصورة</TableCell>
+              
               <TableCell align="center">الإجراءات</TableCell>
             </TableRow>
           </TableHead>
@@ -387,9 +387,7 @@ const InventoryManagement = ({ token, userRole }) => {
                     )}
                   </TableCell>
 
-                  <TableCell>
-                    <img src={product.image || 'https://via.placeholder.com/50'} alt={product.name} style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: '4px' }} />
-                  </TableCell>
+                  
                   <TableCell align="center">
                     <IconButton color="primary" onClick={() => handleEditProduct(product)}>
                       <EditIcon />
@@ -442,13 +440,17 @@ const InventoryManagement = ({ token, userRole }) => {
               label="الفئة"
             >
               <MenuItem value=""><em>اختر فئة</em></MenuItem>
-              <MenuItem value="قهوة">قهوة</MenuItem>
-              <MenuItem value="معجنات">معجنات</MenuItem>
-              <MenuItem value="سندويتشات">سندويتشات</MenuItem>
-              <MenuItem value="حلويات">حلويات</MenuItem>
+              <MenuItem value="مشروبات ساخنة">مشروبات ساخنة</MenuItem>
               <MenuItem value="مشروبات باردة">مشروبات باردة</MenuItem>
-              <MenuItem value="وجبات">وجبات</MenuItem>
-              <MenuItem value="مقليات">مقليات</MenuItem>
+              <MenuItem value="الموهيتو">الموهيتو</MenuItem>
+              <MenuItem value="بان كيك">بان كيك</MenuItem>
+              <MenuItem value=" السموذي">السموذي </MenuItem>
+              <MenuItem value="مشروبات الطاقة">مشروبات الطاقة</MenuItem>
+              <MenuItem value="الشاورما">الشاورما</MenuItem>
+              <MenuItem value="السندويتشات">السندويتشات</MenuItem>
+              <MenuItem value="العصائر الطبيعية">العصائر الطبيعية</MenuItem>
+              <MenuItem value="دجاج الماكينة ">دجاج الماكينة</MenuItem>
+
               {/* أضف المزيد من الفئات هنا حسب الحاجة */}
             </Select>
           </FormControl>
@@ -467,8 +469,6 @@ const InventoryManagement = ({ token, userRole }) => {
           />
           <TextField
             margin="dense"
-            name="image"
-            label="رابط الصورة (اختياري)"
             type="text"
             fullWidth
             variant="outlined"
@@ -485,7 +485,7 @@ const InventoryManagement = ({ token, userRole }) => {
             variant="outlined"
             value={formData.stock}
             onChange={handleChange}
-            inputProps={{ min: "0" }}
+            inputProps={{ min: "1" }}
             sx={{ mb: 2 }}
           />
 

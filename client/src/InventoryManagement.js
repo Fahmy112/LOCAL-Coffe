@@ -33,7 +33,8 @@ const InventoryManagement = ({ token, userRole }) => {
   const [loading, setLoading] = useState(true); // حالة التحميل
   const [error, setError] = useState(''); // رسائل الخطأ
   const [successMessage, setSuccessMessage] = useState(''); // رسائل النجاح
-
+  const [editingField, setEditingField] = useState({ id: null, field: null });
+  const [editedValue, setEditedValue] = useState('');
   // جلب المنتجات
   const fetchProducts = useCallback(async () => {
     if (!token) {
@@ -219,6 +220,32 @@ const InventoryManagement = ({ token, userRole }) => {
     }
   };
 
+  const handleInlineUpdate = async (productId, field, value) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ [field]: Number(value) })
+      });
+  
+      const result = await response.json();
+      if (response.ok) {
+        fetchProducts();
+        setSuccessMessage('تم تحديث المنتج بنجاح');
+      } else {
+        setError(result.msg || 'فشل في تحديث المنتج.');
+      }
+    } catch (err) {
+      console.error('Inline update failed:', err);
+      setError('حدث خطأ أثناء حفظ التعديلات.');
+    } finally {
+      setEditingField({ id: null, field: null });
+    }
+  };
+  
   // حذف منتج
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm('هل أنت متأكد أنك تريد حذف هذا المنتج؟')) {
@@ -314,8 +341,52 @@ const InventoryManagement = ({ token, userRole }) => {
                 <TableRow key={product._id}>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.category}</TableCell>
-                  <TableCell align="right">{product.price.toFixed(2)}</TableCell>
-                  <TableCell align="right">{product.stock}</TableCell>
+                  <TableCell align="right" onDoubleClick={() => {
+                    setEditingField({ id: product._id, field: 'price' });
+                    setEditedValue(product.price);
+                  }}>
+                    {editingField.id === product._id && editingField.field === 'price' ? (
+                      <TextField
+                        type="number"
+                        value={editedValue}
+                        size="small"
+                        onChange={(e) => setEditedValue(e.target.value)}
+                        onBlur={() => handleInlineUpdate(product._id, 'price', editedValue)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleInlineUpdate(product._id, 'price', editedValue);
+                          }
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      `${product.price.toFixed(2)}`
+                    )}
+                  </TableCell>
+
+                  <TableCell align="right" onDoubleClick={() => {
+                    setEditingField({ id: product._id, field: 'stock' });
+                    setEditedValue(product.stock);
+                  }}>
+                    {editingField.id === product._id && editingField.field === 'stock' ? (
+                      <TextField
+                        type="number"
+                        value={editedValue}
+                        size="small"
+                        onChange={(e) => setEditedValue(e.target.value)}
+                        onBlur={() => handleInlineUpdate(product._id, 'stock', editedValue)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleInlineUpdate(product._id, 'stock', editedValue);
+                          }
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      product.stock
+                    )}
+                  </TableCell>
+
                   <TableCell>
                     <img src={product.image || 'https://via.placeholder.com/50'} alt={product.name} style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: '4px' }} />
                   </TableCell>
@@ -446,11 +517,11 @@ const InventoryManagement = ({ token, userRole }) => {
                 sx={{ flex: 1.5 }}
               />
               <TextField
-                 label="الوحدة"
-                 value={ing.unit}
-                 onChange={(e) => handleIngredientChange(index, 'unit', e.target.value)}
-                 sx={{ flex: 1.5 }}
-                 disabled // الوحدة يتم جلبها تلقائيًا من المكون المختار
+                  label="الوحدة"
+                  value={ing.unit}
+                  onChange={(e) => handleIngredientChange(index, 'unit', e.target.value)}
+                  sx={{ flex: 1.5 }}
+                  disabled // الوحدة يتم جلبها تلقائيًا من المكون المختار
               />
               <IconButton color="error" onClick={() => handleRemoveIngredientField(index)}>
                 <RemoveIcon />

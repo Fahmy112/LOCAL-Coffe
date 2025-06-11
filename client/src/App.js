@@ -5,7 +5,7 @@ import { Button, Typography, Container, Box, TextField, FormControl, InputLabel,
   Card, CardContent,CardActions,  IconButton, Grid, Tabs, Tab } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-// ThemeProvider and CssBaseline are now handled in index.js
+
 
 // استيراد المكونات الأخرى
 import ReportsDashboard from './ReportsDashboard';
@@ -169,7 +169,7 @@ function App() {
   const [total, setTotal] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-
+  const [searchTerm, setSearchTerm] = useState('');
   const [showLogin, setShowLogin] = useState(true);
   const [showReports, setShowReports] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
@@ -220,12 +220,19 @@ function App() {
 
   // 3. تصفية المنتجات عند تغيير الفئة المختارة أو تحديث قائمة المنتجات
   useEffect(() => {
-    if (selectedCategory === 'all') {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(products.filter(product => product.category === selectedCategory));
-    }
-  }, [selectedCategory, products]);
+    const byCategory = selectedCategory === 'all'
+      ? products
+      : products.filter(product => product.category === selectedCategory);
+  
+    const bySearch = searchTerm.trim() === ''
+      ? byCategory
+      : byCategory.filter(product =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+  
+    setFilteredProducts(bySearch);
+  }, [selectedCategory, products, searchTerm]);
+  
 
 
   // --- استدعاءات API (API Calls) ---
@@ -529,7 +536,17 @@ function App() {
                   />
                 ))}
               </Tabs>
-            </Box>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                <TextField
+                  label="بحث عن منتج"
+                  variant="outlined"
+                  fullWidth
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </Box>
+
 
             <Grid container spacing={3}>
               {filteredProducts.length === 0 ? (

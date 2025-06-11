@@ -1,8 +1,7 @@
 
     {
         "version": 2,
-        "installCommand": "npm install --prefix backend && npm install --prefix frontend",
-        "buildCommand": "npm run build --prefix frontend",
+        "installCommand": "cd backend && npm install && cd ../frontend && npm install && npm run build",
         "builds": [
         {
             "src": "backend/server.js",

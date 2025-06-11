@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './App.css'; // تأكد من تحديث هذا الملف بالتنسيقات الجديدة
 import {
   Button, Typography, Container, Box, TextField, FormControl, InputLabel, Select, MenuItem,
-  Card, CardContent, CardMedia, CardActions, IconButton, Grid, Tabs, Tab
+  Card, CardContent,  IconButton, Grid, Tabs, Tab
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';

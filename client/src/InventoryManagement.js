@@ -448,9 +448,7 @@ const InventoryManagement = ({ token, userRole }) => {
               <MenuItem value="مشروبات الطاقة">مشروبات الطاقة</MenuItem>
               <MenuItem value="الشاورما">الشاورما</MenuItem>
               <MenuItem value="السندويتشات">السندويتشات</MenuItem>
-              <MenuItem value="العصائر الطبيعية">العصائر الطبيعية</MenuItem>
-              <MenuItem value="دجاج الماكينة ">دجاج الماكينة</MenuItem>
-
+                            
               {/* أضف المزيد من الفئات هنا حسب الحاجة */}
             </Select>
           </FormControl>

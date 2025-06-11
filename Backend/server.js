@@ -1,5 +1,6 @@
 // server.js
 require('dotenv').config();
+console.log('Server starting...'); // سجل في بداية الملف
 console.log('JWT_SECRET loaded:', process.env.JWT_SECRET);
 const express = require('express');
 const cors = require('cors');
@@ -27,25 +28,29 @@ const app = express();
 const port = 5000;
 
 
-
+console.log('Middlewares configuration...'); // سجل قبل استخدام Middlewares
 // --- Middlewares ---
 app.use(cors());
 app.use(express.json()); // Use only express.json() for parsing JSON bodies
 
+console.log('Attempting to connect to MongoDB...'); // سجل قبل الاتصال بقاعدة البيانات
 // --- Database Connection ---
 const dbURI = process.env.MONGO_URI || 'mongodb://localhost:27017/restaurant_pos';
 mongoose.connect(dbURI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
-.then(() => {
-    console.log('Connected to MongoDB!');
-    // Initialize sample data after successful connection
-    initSampleData();
+    .then(() => {
+        console.log('MongoDB Connected Successfully!'); // سجل عند نجاح الاتصال
+        console.log('Connected to MongoDB!');
+        // Initialize sample data after successful connection
+        initSampleData();
 })
 .catch(err => {
-    console.error('Could not connect to MongoDB...', err);
-    process.exit(1);
+    console.error('MongoDB connection error:', err); // سجل أي خطأ في الاتصال
+    // من المهم هنا عدم السماح للخادم بالاستمرار إذا لم يتمكن من الاتصال بقاعدة البيانات
+    // يمكن إرسال إشارة للعملية بالخروج أو عدم معالجة الطلبات
+    process.exit(1); // إيقاف العملية إذا فشل الاتصال بقاعدة البيانات
 });
 
 // --- JWT Secret (IMPORTANT: Change this in production!) ---
@@ -53,6 +58,7 @@ const jwtSecret = process.env.JWT_SECRET || 'YOUR_SUPER_SECRET_COMPLEX_KEY_HERE_
 process.env.JWT_SECRET = jwtSecret; // Make it available in middleware
 
 // --- API Routes ---
+console.log('Registering API routes...'); // سجل قبل تسجيل المسارات
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes); // <--- NEW: استخدام مسارات المنتجات
@@ -62,6 +68,7 @@ app.use('/api/reports', reportRoutes);
 
 // --- Sample Data Initialization (إبقائها هنا للتسهيل مؤقتًا) ---
 async function initSampleData() {
+    console.log('Checking for existing sample data...'); // سجل داخل دالة initSampleData
     try {
         // التحقق مما إذا كانت هناك بيانات موجودة بالفعل
         const existingUsers = await User.countDocuments();
@@ -69,6 +76,7 @@ async function initSampleData() {
         const existingIngredients = await Ingredient.countDocuments();
 
         if (existingUsers === 0) {
+            console.log('No sample data found, initializing...');
             const salt = await bcrypt.genSalt(10);
             const hashedPasswordAdmin = await bcrypt.hash('admin@12345', salt);
             const hashedPasswordManager = await bcrypt.hash('admin@12345', salt);

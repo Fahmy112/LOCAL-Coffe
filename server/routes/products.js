@@ -98,85 +98,108 @@ router.post(
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private (Admin or Manager)
-router.put(
-    '/:id',
-    [
-        auth, // يتطلب توثيق
-        check('name', 'اسم المنتج مطلوب').not().isEmpty(),
-        check('price', 'السعر مطلوب ويجب أن يكون رقمًا موجبًا').isFloat({ min: 0 }),
-        check('category', 'الفئة مطلوبة').not().isEmpty(),
-        check('stock', 'الكمية في المخزون مطلوبة ويجب أن تكون رقمًا موجبًا أو صفرًا').isInt({ min: 0 }),
-        check('ingredients', 'المكونات يجب أن تكون مصفوفة صالحة').optional().isArray(),
-        check('ingredients.*.ingredientId', 'معرف المكون مطلوب').optional().isMongoId(),
-        check('ingredients.*.quantityUsed', 'كمية المكون المستخدمة مطلوبة ويجب أن تكون رقمًا موجبًا').optional().isFloat({ min: 0 }),
-        check('ingredients.*.unit', 'وحدة قياس المكون مطلوبة').optional().not().isEmpty(),
-    ],
-    async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+// router.put(
+//     '/:id',
+//     [
+//         auth, // يتطلب توثيق
+//         check('name', 'اسم المنتج مطلوب').not().isEmpty(),
+//         check('price', 'السعر مطلوب ويجب أن يكون رقمًا موجبًا').isFloat({ min: 0 }),
+//         check('category', 'الفئة مطلوبة').not().isEmpty(),
+//         check('stock', 'الكمية في المخزون مطلوبة ويجب أن تكون رقمًا موجبًا أو صفرًا').isInt({ min: 0 }),
+//         check('ingredients', 'المكونات يجب أن تكون مصفوفة صالحة').optional().isArray(),
+//         check('ingredients.*.ingredientId', 'معرف المكون مطلوب').optional().isMongoId(),
+//         check('ingredients.*.quantityUsed', 'كمية المكون المستخدمة مطلوبة ويجب أن تكون رقمًا موجبًا').optional().isFloat({ min: 0 }),
+//         check('ingredients.*.unit', 'وحدة قياس المكون مطلوبة').optional().not().isEmpty(),
+//     ],
+//     async (req, res) => {
+//         const errors = validationResult(req);
+//         if (!errors.isEmpty()) {
+//             return res.status(400).json({ errors: errors.array() });
+//         }
 
-        // تحقق من الصلاحيات: المدير أو المسؤول فقط يمكنه تعديل المنتجات
-        if (req.user.role !== 'admin' && req.user.role !== 'manager') {
-            return res.status(403).json({ msg: 'ليس لديك صلاحية لتعديل المنتجات' });
-        }
+//         // تحقق من الصلاحيات: المدير أو المسؤول فقط يمكنه تعديل المنتجات
+//         if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+//             return res.status(403).json({ msg: 'ليس لديك صلاحية لتعديل المنتجات' });
+//         }
 
-        const { name, price, category, description, image, stock, ingredients } = req.body;
+//         const { name, price, category, description, image, stock, ingredients } = req.body;
 
-        // بناء كائن المنتج المراد تحديثه
-        const productFields = {
-            name,
-            price,
-            category,
-            description: description || '',
-            image: image || 'https://via.placeholder.com/150',
-            stock,
-            ingredients: ingredients || []
-        };
+//         // بناء كائن المنتج المراد تحديثه
+//         const productFields = {
+//             name,
+//             price,
+//             category,
+//             description: description || '',
+//             image: image || 'https://via.placeholder.com/150',
+//             stock,
+//             ingredients: ingredients || []
+//         };
 
-        try {
-            let product = await Product.findById(req.params.id);
+//         try {
+//             let product = await Product.findById(req.params.id);
+//             if (!product) {
+//                 return res.status(404).json({ msg: 'المنتج غير موجود' });
+//             }
+
+//             // التحقق إذا كان الاسم الجديد موجودًا لمنتج آخر (إذا تم تغيير الاسم)
+//             if (name && name !== product.name) {
+//                 const existingProduct = await Product.findOne({ name });
+//                 if (existingProduct && String(existingProduct._id) !== req.params.id) {
+//                     return res.status(400).json({ msg: 'اسم المنتج هذا مستخدم بالفعل من قبل منتج آخر.' });
+//                 }
+//             }
+
+//             // تحقق من أن كل ingredientId موجود بالفعل في قاعدة بيانات المكونات (اختياري لكن موصى به)
+//             if (ingredients && ingredients.length > 0) {
+//                 for (let i = 0; i < ingredients.length; i++) {
+//                     const ing = await Ingredient.findById(ingredients[i].ingredientId);
+//                     if (!ing) {
+//                         return res.status(400).json({ msg: `المكون بالمعرف ${ingredients[i].ingredientId} غير موجود.` });
+//                     }
+//                 }
+//             }
+
+//             product = await Product.findByIdAndUpdate(
+//                 req.params.id,
+//                 { $set: productFields },
+//                 { new: true }
+//             );
+
+//             res.json(product);
+
+//         } catch (err) {
+//             console.error(err.message);
+//             if (err.kind === 'ObjectId') {
+//                 return res.status(404).json({ msg: 'المنتج غير موجود' });
+//             }
+//             res.status(500).send('Server Error');
+//         }
+//     }
+// );
+        router.put('/:id', auth, async (req, res) => {
+            try {
+            if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+                return res.status(403).json({ msg: 'ليس لديك صلاحية لتعديل المنتجات' });
+            }
+        
+            const updates = req.body;
+        
+            const product = await Product.findByIdAndUpdate(
+                req.params.id,
+                { $set: updates },
+                { new: true, runValidators: true }
+            );
+        
             if (!product) {
                 return res.status(404).json({ msg: 'المنتج غير موجود' });
             }
-
-            // التحقق إذا كان الاسم الجديد موجودًا لمنتج آخر (إذا تم تغيير الاسم)
-            if (name && name !== product.name) {
-                const existingProduct = await Product.findOne({ name });
-                if (existingProduct && String(existingProduct._id) !== req.params.id) {
-                    return res.status(400).json({ msg: 'اسم المنتج هذا مستخدم بالفعل من قبل منتج آخر.' });
-                }
-            }
-
-            // تحقق من أن كل ingredientId موجود بالفعل في قاعدة بيانات المكونات (اختياري لكن موصى به)
-            if (ingredients && ingredients.length > 0) {
-                for (let i = 0; i < ingredients.length; i++) {
-                    const ing = await Ingredient.findById(ingredients[i].ingredientId);
-                    if (!ing) {
-                        return res.status(400).json({ msg: `المكون بالمعرف ${ingredients[i].ingredientId} غير موجود.` });
-                    }
-                }
-            }
-
-            product = await Product.findByIdAndUpdate(
-                req.params.id,
-                { $set: productFields },
-                { new: true }
-            );
-
+        
             res.json(product);
-
-        } catch (err) {
+            } catch (err) {
             console.error(err.message);
-            if (err.kind === 'ObjectId') {
-                return res.status(404).json({ msg: 'المنتج غير موجود' });
+            res.status(500).json({ msg: 'حدث خطأ أثناء تحديث المنتج' });
             }
-            res.status(500).send('Server Error');
-        }
-    }
-);
-
+        });
 // @route   DELETE /api/products/:id
 // @desc    Delete a product
 // @access  Private (Admin or Manager)

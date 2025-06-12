@@ -14,7 +14,7 @@ import {
   Legend
 } from 'chart.js';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -27,7 +27,7 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
 function exportProductSalesPDF(filteredProductSales) {
     const doc = new jsPDF();
     doc.text('تقرير المبيعات حسب المنتج', 14, 14);
-    doc.autoTable({
+    autoTable(doc, {
         head: [['المنتج', 'الكمية', 'الإيراد']],
         body: filteredProductSales.map(item => [item.productName, item.totalQuantitySold, item.totalSales]),
         startY: 20,
@@ -47,7 +47,7 @@ function exportProductSalesExcel(filteredProductSales) {
 function exportEmployeeSalesPDF(filteredEmployeeSales) {
     const doc = new jsPDF();
     doc.text('تقرير المبيعات حسب الموظف', 14, 14);
-    doc.autoTable({
+    autoTable(doc, {
         head: [['الموظف', 'الدور', 'إجمالي المبيعات']],
         body: filteredEmployeeSales.map(item => [item.employeeName, item.employeeRole, item.totalSales]),
         startY: 20,

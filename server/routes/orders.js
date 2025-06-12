@@ -95,4 +95,46 @@ router.get('/:id', auth, async (req, res) => {
     }
 });
 
+// @route   PUT /api/orders/:id
+// @desc    Update an order (admin/manager only)
+// @access  Private
+router.put('/:id', auth, async (req, res) => {
+    if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+        return res.status(403).json({ msg: 'ليس لديك صلاحية لتعديل الطلبات.' });
+    }
+    try {
+        const updatedOrder = await Order.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+        if (!updatedOrder) {
+            return res.status(404).json({ msg: 'الطلب غير موجود.' });
+        }
+        res.json(updatedOrder);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE /api/orders/:id
+// @desc    Delete an order (admin/manager only)
+// @access  Private
+router.delete('/:id', auth, async (req, res) => {
+    if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+        return res.status(403).json({ msg: 'ليس لديك صلاحية لحذف الطلبات.' });
+    }
+    try {
+        const deletedOrder = await Order.findByIdAndDelete(req.params.id);
+        if (!deletedOrder) {
+            return res.status(404).json({ msg: 'الطلب غير موجود.' });
+        }
+        res.json({ msg: 'تم حذف الطلب بنجاح.' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

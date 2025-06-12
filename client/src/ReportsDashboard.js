@@ -175,7 +175,7 @@ const ReportsDashboard = ({ token, userRole }) => {
                                 }}
                             />
                             <Typography variant="body1">
-                                إجمالي مبيعات اليوم: <strong>{dailySales ? dailySales.totalSales.toFixed(2) : 0} جنيه</strong>
+                                إجمالي مبيعات اليوم: <strong>{dailySales ? dailySales.totalSales.toFixed(2) : 0} ريال</strong>
                             </Typography>
                             <Typography variant="body1">
                                 عدد الطلبات اليومية: <strong>{dailySales ? dailySales.totalOrders : 0}</strong>

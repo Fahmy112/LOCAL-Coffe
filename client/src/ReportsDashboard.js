@@ -118,12 +118,30 @@ const ReportsDashboard = ({ token, userRole }) => {
             const response = await fetch(url, {
                 headers: { 'x-auth-token': token }
             });
+            const contentType = response.headers.get('content-type');
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.msg || `HTTP error! status: ${response.status}`);
+                // حاول قراءة رسالة الخطأ من JSON أو HTML
+                let errorMsg = `HTTP error! status: ${response.status}`;
+                if (contentType && contentType.includes('application/json')) {
+                    const errorData = await response.json();
+                    errorMsg = errorData.msg || errorMsg;
+                } else {
+                    const text = await response.text();
+                    if (text.startsWith('<!DOCTYPE')) {
+                        errorMsg = 'الخادم أعاد صفحة HTML بدلاً من بيانات. تحقق من وجود المسار في الباك اند.';
+                    } else {
+                        errorMsg = text;
+                    }
+                }
+                throw new Error(errorMsg);
             }
-            const data = await response.json();
-            setData(data);
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                setData(data);
+            } else {
+                // الرد ليس JSON
+                throw new Error('الخادم لم يرجع بيانات JSON. تحقق من إعدادات السيرفر أو المسار.');
+            }
         } catch (err) {
             console.error('Error fetching report:', err);
             setError('فشل جلب التقرير: ' + err.message);

@@ -166,4 +166,28 @@ router.get('/employee-sales', auth, async (req, res) => {
     }
 });
 
+// @route   GET /api/reports/orders
+// @desc    Get all orders for a specific day
+// @access  Private (Admin or Manager)
+router.get('/orders', auth, async (req, res) => {
+    if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+        return res.status(403).json({ msg: 'ليس لديك صلاحية لعرض أوردرات اليوم.' });
+    }
+    const { date } = req.query; // متوقع YYYY-MM-DD
+    if (!date) return res.status(400).json({ msg: 'يرجى تحديد التاريخ' });
+    try {
+        const start = new Date(date);
+        start.setUTCHours(0, 0, 0, 0);
+        const end = new Date(date);
+        end.setUTCHours(23, 59, 59, 999);
+        const orders = await Order.find({
+            createdAt: { $gte: start, $lte: end }
+        }).sort({ createdAt: -1 });
+        res.json(orders);
+    } catch (err) {
+        console.error('orders report error:', err);
+        res.status(500).json({ msg: 'خطأ في السيرفر' });
+    }
+});
+
 module.exports = router;

@@ -216,8 +216,26 @@ const ReportsDashboard = ({ token, userRole }) => {
                                 </TextField>
                                 {/* أزرار التصدير */}
                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <button onClick={() => exportProductSalesPDF()} style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>PDF</button>
-                                    <button onClick={() => exportProductSalesExcel()} style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #43a047', background: '#43a047', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>Excel</button>
+                                    <button
+                                      onClick={() => exportProductSalesPDF(
+                                        productSales.filter(item =>
+                                          (productCategory === 'all' || item.category === productCategory) &&
+                                          item.productName.toLowerCase().includes(productSearch.toLowerCase())
+                                        )
+                                      )}
+                                      style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                      PDF
+                                    </button>
+                                    <button
+                                      onClick={() => exportProductSalesExcel(
+                                        productSales.filter(item =>
+                                          (productCategory === 'all' || item.category === productCategory) &&
+                                          item.productName.toLowerCase().includes(productSearch.toLowerCase())
+                                        )
+                                      )}
+                                      style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #43a047', background: '#43a047', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                      Excel
+                                    </button>
                                 </Box>
                             </Box>
                             {productSales.length === 0 ? <Typography>لا توجد بيانات.</Typography> : (
@@ -333,8 +351,16 @@ const ReportsDashboard = ({ token, userRole }) => {
                                 </TextField>
                                 {/* أزرار التصدير */}
                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <button onClick={() => exportEmployeeSalesPDF()} style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>PDF</button>
-                                    <button onClick={() => exportEmployeeSalesExcel()} style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #43a047', background: '#43a047', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>Excel</button>
+                                    <button
+                                      onClick={() => exportEmployeeSalesPDF(sortedEmployeeSales)}
+                                      style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                      PDF
+                                    </button>
+                                    <button
+                                      onClick={() => exportEmployeeSalesExcel(sortedEmployeeSales)}
+                                      style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #43a047', background: '#43a047', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                      Excel
+                                    </button>
                                 </Box>
                             </Box>
                             {pagedEmployeeSales.length === 0 ? <Typography>لا توجد بيانات.</Typography> : (

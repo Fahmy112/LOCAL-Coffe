@@ -267,7 +267,93 @@ code {
   }
 }
 
-/* تحسين العرض على iPad Pro وأجهزة التابلت */
+/* شاشات الموبايل الصغيرة (≤600px) */
+@media (max-width: 600px) {
+  .main-layout {
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px;
+  }
+  .products-section,
+  .cart-section {
+    padding: 6px;
+    border-radius: 4px;
+    box-shadow: none;
+  }
+  .products-section h2,
+  .cart-section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+  .MuiCard-root {
+    min-height: 80px !important;
+    padding: 3px !important;
+  }
+  .MuiCardContent-root {
+    padding-bottom: 3px !important;
+  }
+  .MuiButton-root,
+  .place-order-button {
+    font-size: 0.85rem !important;
+    padding: 5px 7px !important;
+    border-radius: 4px !important;
+  }
+  .cart-list li {
+    padding: 3px 0;
+    font-size: 0.9em;
+  }
+  .cart-summary {
+    margin-top: 6px;
+    padding-top: 4px;
+  }
+  .cart-summary h4 {
+    font-size: 1rem;
+  }
+}
+
+/* شاشات التابلت (600px - 900px) */
+@media (min-width: 601px) and (max-width: 900px) {
+  .main-layout {
+    gap: 8px;
+    padding: 8px;
+  }
+  .products-section,
+  .cart-section {
+    padding: 8px;
+    border-radius: 5px;
+  }
+  .products-section h2,
+  .cart-section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+  .MuiCard-root {
+    min-height: 95px !important;
+    padding: 5px !important;
+  }
+  .MuiCardContent-root {
+    padding-bottom: 5px !important;
+  }
+  .MuiButton-root,
+  .place-order-button {
+    font-size: 0.9rem !important;
+    padding: 6px 8px !important;
+    border-radius: 5px !important;
+  }
+  .cart-list li {
+    padding: 5px 0;
+    font-size: 0.93em;
+  }
+  .cart-summary {
+    margin-top: 8px;
+    padding-top: 6px;
+  }
+  .cart-summary h4 {
+    font-size: 1.05rem;
+  }
+}
+
+/* تحسين العرض على iPad Pro وأجهزة التابلت الكبيرة (900px - 1100px) */
 @media (min-width: 900px) and (max-width: 1100px) {
   .main-layout {
     gap: 10px;
@@ -306,5 +392,47 @@ code {
   }
   .cart-summary h4 {
     font-size: 1.1rem;
+  }
+}
+
+/* شاشات الديسكتوب الكبيرة (≥1100px) */
+@media (min-width: 1101px) {
+  .main-layout {
+    gap: 20px;
+    padding: 20px;
+  }
+  .products-section,
+  .cart-section {
+    padding: 20px;
+    border-radius: 8px;
+  }
+  .products-section h2,
+  .cart-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+  .MuiCard-root {
+    min-height: 150px !important;
+    padding: 12px !important;
+  }
+  .MuiCardContent-root {
+    padding-bottom: 12px !important;
+  }
+  .MuiButton-root,
+  .place-order-button {
+    font-size: 1.1rem !important;
+    padding: 12px 18px !important;
+    border-radius: 8px !important;
+  }
+  .cart-list li {
+    padding: 12px 0;
+    font-size: 1.1em;
+  }
+  .cart-summary {
+    margin-top: 20px;
+    padding-top: 15px;
+  }
+  .cart-summary h4 {
+    font-size: 1.3rem;
   }
 }

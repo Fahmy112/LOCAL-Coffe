@@ -526,7 +526,7 @@ function App() {
         <div className="main-layout">
           {/* قسم عرض المنتجات */}
           <div className="products-section">
-            <Typography variant="h2" gutterBottom>قائم الطعام</Typography>
+            <Typography variant="h2" gutterBottom>قائمة الطعام</Typography>
             {/* تبويبات الفئات */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
               <Tabs

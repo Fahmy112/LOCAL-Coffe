@@ -627,16 +627,33 @@ function App() {
                     </Box>
                   ))}
                 </ul>
-                <Box className="cart-summary" sx={{ mt: 2, pt: 2, borderTop: '1px solid #ccc' }}>
-                  <Typography variant="h4" gutterBottom>
+                <Box className="cart-summary" sx={{
+                  mt: 2,
+                  pt: 2,
+                  borderTop: '1px solid #ccc',
+                  position: 'sticky',
+                  bottom: 0,
+                  background: '#fff',
+                  zIndex: 10,
+                  boxShadow: '0 -2px 8px rgba(0,0,0,0.07)'
+                }}>
+                  <Typography variant="h4" gutterBottom sx={{ textAlign: 'center' }}>
                     الإجمالي: {total} ريال
                   </Typography>
                   <Button
                     variant="contained"
                     color="primary"
                     fullWidth
+                    size="large"
                     onClick={placeOrder}
-                    sx={{ mt: 2 }}
+                    sx={{
+                      mt: 2,
+                      fontWeight: 'bold',
+                      fontSize: '1.3rem',
+                      py: 2,
+                      borderRadius: 3,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+                    }}
                   >
                     إرسال الطلب
                   </Button>

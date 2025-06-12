@@ -17,6 +17,7 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
 
 const InventoryManagement = ({ token, userRole }) => {
   const [products, setProducts] = useState([]); // المنتجات التي يتم عرضها في الجدول
+  const [searchTerm, setSearchTerm] = useState(''); // نص البحث
   const [ingredientsList, setIngredientsList] = useState([]); // قائمة المكونات المتاحة للاختيار منها
   const [openDialog, setOpenDialog] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -314,6 +315,17 @@ const InventoryManagement = ({ token, userRole }) => {
         </Button>
       </Box>
 
+      {/* حقل البحث عن منتج */}
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          label="بحث عن منتج أو فئة"
+          variant="outlined"
+          fullWidth
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </Box>
+
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {successMessage && <Alert severity="success" sx={{ mb: 2 }}>{successMessage}</Alert>}
 
@@ -330,14 +342,20 @@ const InventoryManagement = ({ token, userRole }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {products.length === 0 && !loading ? (
+            {(products.filter(product =>
+              product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()))
+            ).length === 0 && !loading) ? (
               <TableRow>
                 <TableCell colSpan={6} align="center">
                   لا توجد منتجات في المخزون حاليًا.
                 </TableCell>
               </TableRow>
             ) : (
-              products.map((product) => (
+              products.filter(product =>
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()))
+              ).map((product) => (
                 <TableRow key={product._id}>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.category}</TableCell>

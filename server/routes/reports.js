@@ -173,17 +173,31 @@ router.get('/orders', auth, async (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'manager') {
         return res.status(403).json({ msg: 'ليس لديك صلاحية لعرض أوردرات اليوم.' });
     }
-    const { date } = req.query; // متوقع YYYY-MM-DD
+    const { date } = req.query;
     if (!date) return res.status(400).json({ msg: 'يرجى تحديد التاريخ' });
     try {
         const start = new Date(date);
         start.setUTCHours(0, 0, 0, 0);
         const end = new Date(date);
         end.setUTCHours(23, 59, 59, 999);
-        const orders = await Order.find({
+
+        // جرب البحث بالحقلين
+        const ordersByCreatedAt = await Order.find({
             createdAt: { $gte: start, $lte: end }
         }).sort({ createdAt: -1 });
-        res.json(orders);
+
+        const ordersByOrderDate = await Order.find({
+            orderDate: { $gte: start, $lte: end }
+        }).sort({ orderDate: -1 });
+
+        console.log('ordersByCreatedAt:', ordersByCreatedAt.length);
+        console.log('ordersByOrderDate:', ordersByOrderDate.length);
+
+        // أرجع النتائج غير الفارغة
+        if (ordersByCreatedAt.length > 0) return res.json(ordersByCreatedAt);
+        if (ordersByOrderDate.length > 0) return res.json(ordersByOrderDate);
+
+        return res.json([]); // لا يوجد أوردرات في هذا اليوم
     } catch (err) {
         console.error('orders report error:', err);
         res.status(500).json({ msg: 'خطأ في السيرفر' });

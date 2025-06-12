@@ -44,7 +44,7 @@ const ReportsDashboard = ({ token, userRole }) => {
     if (error) return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
 
     return (
-        <>
+        <React.Fragment>
             <Container maxWidth="lg" sx={{ mt: 4, p: 3, boxShadow: 3, borderRadius: 2, bgcolor: 'background.paper' }}>
                 <Typography variant="h4" gutterBottom>تقرير الطلبات التفصيلي</Typography>
                 <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -124,7 +124,7 @@ const ReportsDashboard = ({ token, userRole }) => {
                     }
                 }}
             />
-        </>
+        </React.Fragment>
     );
 };
 

@@ -72,6 +72,11 @@ const ReportsDashboard = ({ token, userRole }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
+    // تحكم في إظهار تقارير المنتجات والموظفين
+    const [showProductReport, setShowProductReport] = useState(false);
+    const [showEmployeeReport, setShowEmployeeReport] = useState(false);
+    const [loadingProduct, setLoadingProduct] = useState(false);
+    const [loadingEmployee, setLoadingEmployee] = useState(false);
     // فلاتر متقدمة
     const [productSearch, setProductSearch] = useState('');
     const [productCategory, setProductCategory] = useState('all');
@@ -120,7 +125,8 @@ const ReportsDashboard = ({ token, userRole }) => {
         }
     }, [token]); // تعتمد على token فقط
 
-    const fetchAllReports = useCallback(async () => {
+    // جلب تقرير المبيعات اليومية فقط افتراضياً
+    const fetchDailyReport = useCallback(async () => {
         if (!token || (userRole !== 'admin' && userRole !== 'manager')) {
             setError('ليس لديك صلاحية لعرض التقارير.');
             setLoading(false);
@@ -129,25 +135,44 @@ const ReportsDashboard = ({ token, userRole }) => {
         setLoading(true);
         setError('');
         try {
-            await Promise.all([
-                fetchReport(`${API_BASE_URL}/reports/daily-sales?date=${selectedDate}`, setDailySales),
-                fetchReport(`${API_BASE_URL}/reports/product-sales`, setProductSales),
-                fetchReport(`${API_BASE_URL}/reports/employee-sales`, setEmployeeSales)
-            ]);
+            await fetchReport(`${API_BASE_URL}/reports/daily-sales?date=${selectedDate}`, setDailySales);
         } catch (err) {
             // الأخطاء يتم التعامل معها داخل fetchReport
         } finally {
             setLoading(false);
         }
-    }, [token, userRole, selectedDate, fetchReport]); // تعتمد على selectedDate و fetchReport الآن
+    }, [token, userRole, selectedDate, fetchReport]);
+
+    // جلب تقرير المنتجات عند الطلب
+    const fetchProductReport = useCallback(async () => {
+        setLoadingProduct(true);
+        setError('');
+        try {
+            await fetchReport(`${API_BASE_URL}/reports/product-sales`, setProductSales);
+        } catch (err) {
+        } finally {
+            setLoadingProduct(false);
+        }
+    }, [fetchReport]);
+
+    // جلب تقرير الموظفين عند الطلب
+    const fetchEmployeeReport = useCallback(async () => {
+        setLoadingEmployee(true);
+        setError('');
+        try {
+            await fetchReport(`${API_BASE_URL}/reports/employee-sales`, setEmployeeSales);
+        } catch (err) {
+        } finally {
+            setLoadingEmployee(false);
+        }
+    }, [fetchReport]);
 
     useEffect(() => {
-        fetchAllReports();
-    }, [fetchAllReports]); // تعتمد على fetchAllReports
+        fetchDailyReport();
+    }, [fetchDailyReport]);
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     if (error && userRole !== 'admin' && userRole !== 'manager') return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
-
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4, p: 3, boxShadow: 3, borderRadius: 2, bgcolor: 'background.paper' }}>
@@ -191,129 +216,153 @@ const ReportsDashboard = ({ token, userRole }) => {
                             <Typography variant="h6" component="div" gutterBottom>
                                 المبيعات حسب المنتج
                             </Typography>
-                            {/* فلاتر المنتجات */}
-                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                                <TextField
-                                    label="بحث عن منتج"
-                                    variant="outlined"
-                                    size="small"
-                                    value={productSearch}
-                                    onChange={e => setProductSearch(e.target.value)}
-                                    sx={{ flex: 2 }}
-                                />
-                                <TextField
-                                    select
-                                    label="الفئة"
-                                    variant="outlined"
-                                    size="small"
-                                    value={productCategory}
-                                    onChange={e => setProductCategory(e.target.value)}
-                                    sx={{ flex: 1, minWidth: 120 }}
-                                >
-                                    {productCategories.map(cat => (
-                                        <option key={cat} value={cat}>{cat === 'all' ? 'الكل' : cat}</option>
-                                    ))}
-                                </TextField>
-                                {/* أزرار التصدير */}
-                                <Box sx={{ display: 'flex', gap: 1 }}>
+                            {!showProductReport ? (
+                                <Box sx={{ textAlign: 'center', my: 2 }}>
                                     <button
-                                      onClick={() => exportProductSalesPDF(
-                                        productSales.filter(item =>
-                                          (productCategory === 'all' || item.category === productCategory) &&
-                                          item.productName.toLowerCase().includes(productSearch.toLowerCase())
-                                        )
-                                      )}
-                                      style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
-                                      PDF
-                                    </button>
-                                    <button
-                                      onClick={() => exportProductSalesExcel(
-                                        productSales.filter(item =>
-                                          (productCategory === 'all' || item.category === productCategory) &&
-                                          item.productName.toLowerCase().includes(productSearch.toLowerCase())
-                                        )
-                                      )}
-                                      style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #43a047', background: '#43a047', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
-                                      Excel
+                                        onClick={async () => {
+                                            setShowProductReport(true);
+                                            if (productSales.length === 0) await fetchProductReport();
+                                        }}
+                                        style={{padding: '8px 20px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                        عرض تقرير المنتجات
                                     </button>
                                 </Box>
-                            </Box>
-                            {productSales.length === 0 ? <Typography>لا توجد بيانات.</Typography> : (
-                                <TableContainer component={Paper} elevation={0}>
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>المنتج</TableCell>
-                                                <TableCell align="right">الكمية</TableCell>
-                                                <TableCell align="right">الإيراد</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {productSales
-                                                .filter(item =>
-                                                    (productCategory === 'all' || item.category === productCategory) &&
-                                                    item.productName.toLowerCase().includes(productSearch.toLowerCase())
-                                                )
-                                                .map((item) => (
-                                                    <TableRow key={item._id}>
-                                                        <TableCell>{item.productName}</TableCell>
-                                                        <TableCell align="right">{item.totalQuantitySold}</TableCell>
-                                                        <TableCell align="right"> {(item.totalSales)?.toFixed(2) ?? '0.00'}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            )}
-                            {/* رسم بياني لمبيعات المنتجات */}
-                            {productSales.length > 0 && (
-                              <Box sx={{ mt: 3 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 1 }}>مخطط الكميات المباعة حسب المنتج</Typography>
-                                <Bar
-                                  data={{
-                                    labels: productSales
-                                      .filter(item =>
-                                        (productCategory === 'all' || item.category === productCategory) &&
-                                        item.productName.toLowerCase().includes(productSearch.toLowerCase())
-                                      )
-                                      .map(item => item.productName),
-                                    datasets: [
-                                      {
-                                        label: 'الكمية المباعة',
-                                        data: productSales
+                            ) : (
+                                <>
+                                <Box sx={{ textAlign: 'left', mb: 1 }}>
+                                    <button
+                                        onClick={() => setShowProductReport(false)}
+                                        style={{padding: '4px 12px', borderRadius: 4, border: '1px solid #888', background: '#eee', color: '#333', fontWeight: 'bold', cursor: 'pointer'}}>
+                                        إخفاء
+                                    </button>
+                                </Box>
+                                {loadingProduct ? <CircularProgress size={28} sx={{ display: 'block', mx: 'auto', my: 2 }} /> : <>
+                                {/* فلاتر المنتجات */}
+                                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                    <TextField
+                                        label="بحث عن منتج"
+                                        variant="outlined"
+                                        size="small"
+                                        value={productSearch}
+                                        onChange={e => setProductSearch(e.target.value)}
+                                        sx={{ flex: 2 }}
+                                    />
+                                    <TextField
+                                        select
+                                        label="الفئة"
+                                        variant="outlined"
+                                        size="small"
+                                        value={productCategory}
+                                        onChange={e => setProductCategory(e.target.value)}
+                                        sx={{ flex: 1, minWidth: 120 }}
+                                    >
+                                        {productCategories.map(cat => (
+                                            <option key={cat} value={cat}>{cat === 'all' ? 'الكل' : cat}</option>
+                                        ))}
+                                    </TextField>
+                                    {/* أزرار التصدير */}
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <button
+                                          onClick={() => exportProductSalesPDF(
+                                            productSales.filter(item =>
+                                              (productCategory === 'all' || item.category === productCategory) &&
+                                              item.productName.toLowerCase().includes(productSearch.toLowerCase())
+                                            )
+                                          )}
+                                          style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                          PDF
+                                        </button>
+                                        <button
+                                          onClick={() => exportProductSalesExcel(
+                                            productSales.filter(item =>
+                                              (productCategory === 'all' || item.category === productCategory) &&
+                                              item.productName.toLowerCase().includes(productSearch.toLowerCase())
+                                            )
+                                          )}
+                                          style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #43a047', background: '#43a047', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                          Excel
+                                        </button>
+                                    </Box>
+                                </Box>
+                                {productSales.length === 0 ? <Typography>لا توجد بيانات.</Typography> : (
+                                    <TableContainer component={Paper} elevation={0}>
+                                        <Table size="small">
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>المنتج</TableCell>
+                                                    <TableCell align="right">الكمية</TableCell>
+                                                    <TableCell align="right">الإيراد</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {productSales
+                                                    .filter(item =>
+                                                        (productCategory === 'all' || item.category === productCategory) &&
+                                                        item.productName.toLowerCase().includes(productSearch.toLowerCase())
+                                                    )
+                                                    .map((item) => (
+                                                        <TableRow key={item._id}>
+                                                            <TableCell>{item.productName}</TableCell>
+                                                            <TableCell align="right">{item.totalQuantitySold}</TableCell>
+                                                            <TableCell align="right"> {(item.totalSales)?.toFixed(2) ?? '0.00'}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                )}
+                                {/* رسم بياني لمبيعات المنتجات */}
+                                {productSales.length > 0 && (
+                                  <Box sx={{ mt: 3 }}>
+                                    <Typography variant="subtitle1" sx={{ mb: 1 }}>مخطط الكميات المباعة حسب المنتج</Typography>
+                                    <Bar
+                                      data={{
+                                        labels: productSales
                                           .filter(item =>
                                             (productCategory === 'all' || item.category === productCategory) &&
                                             item.productName.toLowerCase().includes(productSearch.toLowerCase())
                                           )
-                                          .map(item => item.totalQuantitySold),
-                                        backgroundColor: '#1976d2',
-                                      },
-                                      {
-                                        label: 'الإيراد',
-                                        data: productSales
-                                          .filter(item =>
-                                            (productCategory === 'all' || item.category === productCategory) &&
-                                            item.productName.toLowerCase().includes(productSearch.toLowerCase())
-                                          )
-                                          .map(item => item.totalSales),
-                                        backgroundColor: '#43a047',
-                                      }
-                                    ]
-                                  }}
-                                  options={{
-                                    responsive: true,
-                                    plugins: {
-                                      legend: { position: 'top' },
-                                      title: { display: false }
-                                    },
-                                    indexAxis: 'y',
-                                    scales: {
-                                      x: { beginAtZero: true }
-                                    }
-                                  }}
-                                  height={220}
-                                />
-                              </Box>
+                                          .map(item => item.productName),
+                                        datasets: [
+                                          {
+                                            label: 'الكمية المباعة',
+                                            data: productSales
+                                              .filter(item =>
+                                                (productCategory === 'all' || item.category === productCategory) &&
+                                                item.productName.toLowerCase().includes(productSearch.toLowerCase())
+                                              )
+                                              .map(item => item.totalQuantitySold),
+                                            backgroundColor: '#1976d2',
+                                          },
+                                          {
+                                            label: 'الإيراد',
+                                            data: productSales
+                                              .filter(item =>
+                                                (productCategory === 'all' || item.category === productCategory) &&
+                                                item.productName.toLowerCase().includes(productSearch.toLowerCase())
+                                              )
+                                              .map(item => item.totalSales),
+                                            backgroundColor: '#43a047',
+                                          }
+                                        ]
+                                      }}
+                                      options={{
+                                        responsive: true,
+                                        plugins: {
+                                          legend: { position: 'top' },
+                                          title: { display: false }
+                                        },
+                                        indexAxis: 'y',
+                                        scales: {
+                                          x: { beginAtZero: true }
+                                        }
+                                      }}
+                                      height={220}
+                                    />
+                                  </Box>
+                                )}
+                                </>}
+                                </>
                             )}
                         </CardContent>
                     </Card>
@@ -326,121 +375,145 @@ const ReportsDashboard = ({ token, userRole }) => {
                             <Typography variant="h6" component="div" gutterBottom>
                                 المبيعات حسب الموظف
                             </Typography>
-                            {/* فلاتر الموظفين */}
-                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                                <TextField
-                                    label="بحث عن موظف"
-                                    variant="outlined"
-                                    size="small"
-                                    value={employeeSearch}
-                                    onChange={e => setEmployeeSearch(e.target.value)}
-                                    sx={{ flex: 2 }}
-                                />
-                                <TextField
-                                    select
-                                    label="اسم الموظف"
-                                    variant="outlined"
-                                    size="small"
-                                    value={employeeNames.includes(employeeSearch) ? employeeSearch : 'all'}
-                                    onChange={e => setEmployeeSearch(e.target.value === 'all' ? '' : e.target.value)}
-                                    sx={{ flex: 1, minWidth: 120 }}
-                                >
-                                    {employeeNames.map(name => (
-                                        <option key={name} value={name}>{name === 'all' ? 'الكل' : name}</option>
-                                    ))}
-                                </TextField>
-                                {/* أزرار التصدير */}
-                                <Box sx={{ display: 'flex', gap: 1 }}>
+                            {!showEmployeeReport ? (
+                                <Box sx={{ textAlign: 'center', my: 2 }}>
                                     <button
-                                      onClick={() => exportEmployeeSalesPDF(sortedEmployeeSales)}
-                                      style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
-                                      PDF
-                                    </button>
-                                    <button
-                                      onClick={() => exportEmployeeSalesExcel(sortedEmployeeSales)}
-                                      style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #43a047', background: '#43a047', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
-                                      Excel
+                                        onClick={async () => {
+                                            setShowEmployeeReport(true);
+                                            if (employeeSales.length === 0) await fetchEmployeeReport();
+                                        }}
+                                        style={{padding: '8px 20px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                        عرض تقرير الموظفين
                                     </button>
                                 </Box>
-                            </Box>
-                            {pagedEmployeeSales.length === 0 ? <Typography>لا توجد بيانات.</Typography> : (
-                                <TableContainer component={Paper} elevation={0}>
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell onClick={() => {
-                                                  setEmployeeSortField('employeeName');
-                                                  setEmployeeSortDir(employeeSortField === 'employeeName' && employeeSortDir === 'asc' ? 'desc' : 'asc');
-                                                }} style={{cursor:'pointer'}}>الموظف</TableCell>
-                                                <TableCell align="right" onClick={() => {
-                                                  setEmployeeSortField('employeeRole');
-                                                  setEmployeeSortDir(employeeSortField === 'employeeRole' && employeeSortDir === 'asc' ? 'desc' : 'asc');
-                                                }} style={{cursor:'pointer'}}>الدور</TableCell>
-                                                <TableCell align="right" onClick={() => {
-                                                  setEmployeeSortField('totalSales');
-                                                  setEmployeeSortDir(employeeSortField === 'totalSales' && employeeSortDir === 'asc' ? 'desc' : 'asc');
-                                                }} style={{cursor:'pointer'}}>إجمالي المبيعات</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {pagedEmployeeSales.map((item) => (
-                                                <TableRow key={item.employeeName}>
-                                                    <TableCell>{item.employeeName}</TableCell>
-                                                    <TableCell align="right">{item.employeeRole}</TableCell>
-                                                    <TableCell align="right">
-                                                        {(item.totalSales)?.toFixed(2) ?? '0.00'}
-                                                    </TableCell>
+                            ) : (
+                                <>
+                                <Box sx={{ textAlign: 'left', mb: 1 }}>
+                                    <button
+                                        onClick={() => setShowEmployeeReport(false)}
+                                        style={{padding: '4px 12px', borderRadius: 4, border: '1px solid #888', background: '#eee', color: '#333', fontWeight: 'bold', cursor: 'pointer'}}>
+                                        إخفاء
+                                    </button>
+                                </Box>
+                                {loadingEmployee ? <CircularProgress size={28} sx={{ display: 'block', mx: 'auto', my: 2 }} /> : <>
+                                {/* فلاتر الموظفين */}
+                                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                    <TextField
+                                        label="بحث عن موظف"
+                                        variant="outlined"
+                                        size="small"
+                                        value={employeeSearch}
+                                        onChange={e => setEmployeeSearch(e.target.value)}
+                                        sx={{ flex: 2 }}
+                                    />
+                                    <TextField
+                                        select
+                                        label="اسم الموظف"
+                                        variant="outlined"
+                                        size="small"
+                                        value={employeeNames.includes(employeeSearch) ? employeeSearch : 'all'}
+                                        onChange={e => setEmployeeSearch(e.target.value === 'all' ? '' : e.target.value)}
+                                        sx={{ flex: 1, minWidth: 120 }}
+                                    >
+                                        {employeeNames.map(name => (
+                                            <option key={name} value={name}>{name === 'all' ? 'الكل' : name}</option>
+                                        ))}
+                                    </TextField>
+                                    {/* أزرار التصدير */}
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <button
+                                          onClick={() => exportEmployeeSalesPDF(sortedEmployeeSales)}
+                                          style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #1976d2', background: '#1976d2', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                          PDF
+                                        </button>
+                                        <button
+                                          onClick={() => exportEmployeeSalesExcel(sortedEmployeeSales)}
+                                          style={{padding: '6px 12px', borderRadius: 4, border: '1px solid #43a047', background: '#43a047', color: '#fff', fontWeight: 'bold', cursor: 'pointer'}}>
+                                          Excel
+                                        </button>
+                                    </Box>
+                                </Box>
+                                {pagedEmployeeSales.length === 0 ? <Typography>لا توجد بيانات.</Typography> : (
+                                    <TableContainer component={Paper} elevation={0}>
+                                        <Table size="small">
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell onClick={() => {
+                                                      setEmployeeSortField('employeeName');
+                                                      setEmployeeSortDir(employeeSortField === 'employeeName' && employeeSortDir === 'asc' ? 'desc' : 'asc');
+                                                    }} style={{cursor:'pointer'}}>الموظف</TableCell>
+                                                    <TableCell align="right" onClick={() => {
+                                                      setEmployeeSortField('employeeRole');
+                                                      setEmployeeSortDir(employeeSortField === 'employeeRole' && employeeSortDir === 'asc' ? 'desc' : 'asc');
+                                                    }} style={{cursor:'pointer'}}>الدور</TableCell>
+                                                    <TableCell align="right" onClick={() => {
+                                                      setEmployeeSortField('totalSales');
+                                                      setEmployeeSortDir(employeeSortField === 'totalSales' && employeeSortDir === 'asc' ? 'desc' : 'asc');
+                                                    }} style={{cursor:'pointer'}}>إجمالي المبيعات</TableCell>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            )}
-                            {/* ترقيم صفحات */}
-                            {Math.ceil(sortedEmployeeSales.length / PAGE_SIZE) > 1 && (
-                              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1, gap: 1 }}>
-                                <button onClick={() => setEmployeePage(p => Math.max(0, p - 1))} disabled={employeePage === 0}>السابق</button>
-                                <span>صفحة {employeePage + 1} من {Math.ceil(sortedEmployeeSales.length / PAGE_SIZE)}</span>
-                                <button onClick={() => setEmployeePage(p => Math.min(Math.ceil(sortedEmployeeSales.length / PAGE_SIZE) - 1, p + 1))} disabled={employeePage === Math.ceil(sortedEmployeeSales.length / PAGE_SIZE) - 1}>التالي</button>
-                              </Box>
-                            )}
-                            {/* رسم بياني لمبيعات الموظفين */}
-                            {employeeSales.length > 0 && (
-                              <Box sx={{ mt: 3 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 1 }}>مخطط إجمالي المبيعات حسب الموظف</Typography>
-                                <Bar
-                                  data={{
-                                    labels: employeeSales
-                                      .filter(item =>
-                                        (employeeSearch === '' || item.employeeName === employeeSearch || item.employeeName.toLowerCase().includes(employeeSearch.toLowerCase()))
-                                      )
-                                      .map(item => item.employeeName),
-                                    datasets: [
-                                      {
-                                        label: 'إجمالي المبيعات',
-                                        data: employeeSales
+                                            </TableHead>
+                                            <TableBody>
+                                                {pagedEmployeeSales.map((item) => (
+                                                    <TableRow key={item.employeeName}>
+                                                        <TableCell>{item.employeeName}</TableCell>
+                                                        <TableCell align="right">{item.employeeRole}</TableCell>
+                                                        <TableCell align="right">
+                                                            {(item.totalSales)?.toFixed(2) ?? '0.00'}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                )}
+                                {/* ترقيم صفحات */}
+                                {Math.ceil(sortedEmployeeSales.length / PAGE_SIZE) > 1 && (
+                                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1, gap: 1 }}>
+                                    <button onClick={() => setEmployeePage(p => Math.max(0, p - 1))} disabled={employeePage === 0}>السابق</button>
+                                    <span>صفحة {employeePage + 1} من {Math.ceil(sortedEmployeeSales.length / PAGE_SIZE)}</span>
+                                    <button onClick={() => setEmployeePage(p => Math.min(Math.ceil(sortedEmployeeSales.length / PAGE_SIZE) - 1, p + 1))} disabled={employeePage === Math.ceil(sortedEmployeeSales.length / PAGE_SIZE) - 1}>التالي</button>
+                                  </Box>
+                                )}
+                                {/* رسم بياني لمبيعات الموظفين */}
+                                {employeeSales.length > 0 && (
+                                  <Box sx={{ mt: 3 }}>
+                                    <Typography variant="subtitle1" sx={{ mb: 1 }}>مخطط إجمالي المبيعات حسب الموظف</Typography>
+                                    <Bar
+                                      data={{
+                                        labels: employeeSales
                                           .filter(item =>
                                             (employeeSearch === '' || item.employeeName === employeeSearch || item.employeeName.toLowerCase().includes(employeeSearch.toLowerCase()))
                                           )
-                                          .map(item => item.totalSales),
-                                        backgroundColor: '#1976d2',
-                                      }
-                                    ]
-                                  }}
-                                  options={{
-                                    responsive: true,
-                                    plugins: {
-                                      legend: { position: 'top' },
-                                      title: { display: false }
-                                    },
-                                    indexAxis: 'y',
-                                    scales: {
-                                      x: { beginAtZero: true }
-                                    }
-                                  }}
-                                  height={220}
-                                />
-                              </Box>
+                                          .map(item => item.employeeName),
+                                        datasets: [
+                                          {
+                                            label: 'إجمالي المبيعات',
+                                            data: employeeSales
+                                              .filter(item =>
+                                                (employeeSearch === '' || item.employeeName === employeeSearch || item.employeeName.toLowerCase().includes(employeeSearch.toLowerCase()))
+                                              )
+                                              .map(item => item.totalSales),
+                                            backgroundColor: '#1976d2',
+                                          }
+                                        ]
+                                      }}
+                                      options={{
+                                        responsive: true,
+                                        plugins: {
+                                          legend: { position: 'top' },
+                                          title: { display: false }
+                                        },
+                                        indexAxis: 'y',
+                                        scales: {
+                                          x: { beginAtZero: true }
+                                        }
+                                      }}
+                                      height={220}
+                                    />
+                                  </Box>
+                                )}
+                                </>}
+                                </>
                             )}
                         </CardContent>
                     </Card>

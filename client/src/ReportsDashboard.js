@@ -16,6 +16,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import OrderDetailsDialog from './OrderDetailsDialog';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -101,6 +102,32 @@ const ReportsDashboard = ({ token, userRole }) => {
       });
     const pagedEmployeeSales = sortedEmployeeSales.slice(employeePage * PAGE_SIZE, (employeePage + 1) * PAGE_SIZE);
 
+    // تقرير الطلبات التفصيلي
+    const [orders, setOrders] = useState([]);
+    const [loadingOrders, setLoadingOrders] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+
+    const fetchOrders = useCallback(async () => {
+        setLoadingOrders(true);
+        setError('');
+        try {
+            const response = await fetch(`${API_BASE_URL}/orders`, {
+                headers: { 'x-auth-token': token }
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.msg || `HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setOrders(data);
+        } catch (err) {
+            setError('فشل جلب الطلبات: ' + err.message);
+        } finally {
+            setLoadingOrders(false);
+        }
+    }, [token]);
+
     const fetchReport = useCallback(async (url, setData) => {
         try {
             const response = await fetch(url, {
@@ -179,6 +206,11 @@ const ReportsDashboard = ({ token, userRole }) => {
         fetchDailyReport();
     }, [fetchDailyReport]);
 
+    // جلب الطلبات عند فتح التقرير
+    useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
+
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     if (error && userRole !== 'admin' && userRole !== 'manager') return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
 
@@ -189,6 +221,49 @@ const ReportsDashboard = ({ token, userRole }) => {
             {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 2 }}>{error}</Alert>}
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
+
+                {/* تقرير الطلبات التفصيلي */}
+                <Grid item xs={12}>
+                    <Card variant="outlined">
+                        <CardContent>
+                            <Typography variant="h6" component="div" gutterBottom>
+                                تقرير ا��طلبات التف��يلي
+                            </Typography>
+                            {loadingOrders ? <CircularProgress size={28} sx={{ display: 'block', mx: 'auto', my: 2 }} /> :
+                                orders.length === 0 ? <Typography>لا توجد طلبات.</Typography> : (
+                                    <TableContainer component={Paper} elevation={0}>
+                                        <Table size="small">
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>رقم الطلب</TableCell>
+                                                    <TableCell>التاريخ</TableCell>
+                                                    <TableCell>الكاشير</TableCell>
+                                                    <TableCell>الإجمالي</TableCell>
+                                                    <TableCell>الحالة</TableCell>
+                                                    <TableCell>تفاصيل</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {orders.map(order => (
+                                                    <TableRow key={order._id}>
+                                                        <TableCell>{order._id}</TableCell>
+                                                        <TableCell>{order.orderDate ? new Date(order.orderDate).toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : '')}</TableCell>
+                                                        <TableCell>{order.orderedBy?.username || '-'}</TableCell>
+                                                        <TableCell>{order.totalAmount}</TableCell>
+                                                        <TableCell>{order.status || '-'}</TableCell>
+                                                        <TableCell>
+                                                            <Button size="small" variant="outlined" onClick={() => { setSelectedOrder(order); setOrderDialogOpen(true); }}>تفاصيل</Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                )
+                            }
+                        </CardContent>
+                    </Card>
+                </Grid>
                 {/* تقرير المبيعات اليومية */}
                 <Grid item xs={12} md={4}>
                     <Card variant="outlined">
@@ -528,6 +603,44 @@ const ReportsDashboard = ({ token, userRole }) => {
                 </Grid>
             </Grid>
         </Container>
+        <OrderDetailsDialog
+            open={orderDialogOpen}
+            order={selectedOrder}
+            onClose={() => setOrderDialogOpen(false)}
+            onDelete={async (orderId) => {
+                if (window.confirm('هل أنت متأكد من حذف هذا الطلب؟')) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+                            method: 'DELETE',
+                            headers: { 'x-auth-token': token }
+                        });
+                        if (!response.ok) throw new Error('فشل حذف الطلب');
+                        setOrders(orders => orders.filter(o => o._id !== orderId));
+                        setOrderDialogOpen(false);
+                    } catch (err) {
+                        setError('فشل حذف الطلب: ' + err.message);
+                    }
+                }
+            }}
+            onSave={async (editedOrder) => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/orders/${editedOrder._id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'x-auth-token': token,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(editedOrder)
+                    });
+                    if (!response.ok) throw new Error('فشل تعديل الطلب');
+                    const updated = await response.json();
+                    setOrders(orders => orders.map(o => o._id === updated._id ? updated : o));
+                    setOrderDialogOpen(false);
+                } catch (err) {
+                    setError('فشل تعديل الطلب: ' + err.message);
+                }
+            }}
+        />
     );
 };
 

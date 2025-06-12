@@ -138,3 +138,33 @@
 
     /* ضبط الخطوط لتناسب الطابعات الحرارية إذا لزم الأمر */
 }
+
+/* تحسين العرض على iPad Pro وأجهزة التابلت */
+@media (min-width: 900px) and (max-width: 1100px) {
+    .receipt-content {
+        max-width: 320px;
+        padding: 10px;
+    }
+    .invoice-header h2 {
+        font-size: 1.1em;
+    }
+    .invoice-header p,
+    .invoice-footer p {
+        font-size: 0.8em;
+    }
+    .invoice-body th,
+    .invoice-body td {
+        font-size: 0.8em;
+        padding: 4px 0;
+    }
+    .invoice-footer h3 {
+        font-size: 1em;
+        margin: 6px 0;
+    }
+    .close-print-button,
+    .print-button {
+        padding: 7px 10px;
+        font-size: 0.9em;
+        margin: 3px;
+    }
+}

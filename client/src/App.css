@@ -266,3 +266,45 @@ code {
     /* تأخذ عرض الشاشة بالكامل */
   }
 }
+
+/* تحسين العرض على iPad Pro وأجهزة التابلت */
+@media (min-width: 900px) and (max-width: 1100px) {
+  .main-layout {
+    gap: 10px;
+    padding: 10px;
+  }
+  .products-section,
+  .cart-section {
+    padding: 10px;
+    border-radius: 6px;
+  }
+  .products-section h2,
+  .cart-section h2 {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+  }
+  .MuiCard-root {
+    min-height: 110px !important;
+    padding: 6px !important;
+  }
+  .MuiCardContent-root {
+    padding-bottom: 6px !important;
+  }
+  .MuiButton-root,
+  .place-order-button {
+    font-size: 0.95rem !important;
+    padding: 7px 10px !important;
+    border-radius: 6px !important;
+  }
+  .cart-list li {
+    padding: 6px 0;
+    font-size: 0.95em;
+  }
+  .cart-summary {
+    margin-top: 10px;
+    padding-top: 8px;
+  }
+  .cart-summary h4 {
+    font-size: 1.1rem;
+  }
+}

@@ -20,10 +20,9 @@ import * as XLSX from 'xlsx';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? '/api' // هذا للتشغيل على Vercel، حيث تكون الواجهة الأمامية والخلفية على نفس النطاق
-  : 'http://localhost:5000/api'; // للتشغيل المحلي
+  ? '/api'
+  : 'http://localhost:5000/api';
 
-// دوال التصدير
 function exportProductSalesPDF(filteredProductSales) {
     const doc = new jsPDF();
     doc.text('تقرير المبيعات حسب المنتج', 14, 14);
@@ -71,7 +70,7 @@ const ReportsDashboard = ({ token, userRole }) => {
     const [employeeSales, setEmployeeSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     // تحكم في إظهار تقارير المنتجات والموظفين
     const [showProductReport, setShowProductReport] = useState(false);
     const [showEmployeeReport, setShowEmployeeReport] = useState(false);
@@ -81,22 +80,12 @@ const ReportsDashboard = ({ token, userRole }) => {
     const [productSearch, setProductSearch] = useState('');
     const [productCategory, setProductCategory] = useState('all');
     const [employeeSearch, setEmployeeSearch] = useState('');
-    // حالة الأوردرات اليومية
-    const [orders, setOrders] = useState([]);
-    const [loadingOrders, setLoadingOrders] = useState(false);
-    const [editOrderId, setEditOrderId] = useState(null);
-    const [editOrderData, setEditOrderData] = useState({});
-    // استخراج الفئات من بيانات المنتجات
     const productCategories = ['all', ...Array.from(new Set(productSales.map(p => p.category).filter(Boolean)))];
     const employeeNames = ['all', ...Array.from(new Set(employeeSales.map(e => e.employeeName).filter(Boolean)))];
-
-    // متغيرات الفرز والترقيم لتقرير الموظفين
     const [employeeSortField, setEmployeeSortField] = useState('employeeName');
     const [employeeSortDir, setEmployeeSortDir] = useState('asc');
     const [employeePage, setEmployeePage] = useState(0);
     const PAGE_SIZE = 10;
-
-    // فر�� بيانات الموظفين
     const sortedEmployeeSales = [...employeeSales]
       .filter(item =>
         employeeSearch === '' || item.employeeName === employeeSearch || item.employeeName.toLowerCase().includes(employeeSearch.toLowerCase())
@@ -110,7 +99,6 @@ const ReportsDashboard = ({ token, userRole }) => {
         if (valA > valB) return employeeSortDir === 'asc' ? 1 : -1;
         return 0;
       });
-    // ترقيم الصفحات
     const pagedEmployeeSales = sortedEmployeeSales.slice(employeePage * PAGE_SIZE, (employeePage + 1) * PAGE_SIZE);
 
     const fetchReport = useCallback(async (url, setData) => {
@@ -120,7 +108,6 @@ const ReportsDashboard = ({ token, userRole }) => {
             });
             const contentType = response.headers.get('content-type');
             if (!response.ok) {
-                // حاول قراءة رسالة الخطأ من JSON أو HTML
                 let errorMsg = `HTTP error! status: ${response.status}`;
                 if (contentType && contentType.includes('application/json')) {
                     const errorData = await response.json();
@@ -139,14 +126,13 @@ const ReportsDashboard = ({ token, userRole }) => {
                 const data = await response.json();
                 setData(data);
             } else {
-                // الرد ليس JSON
                 throw new Error('الخادم لم يرجع بيانات JSON. تحقق من إعدادات السيرفر أو المسار.');
             }
         } catch (err) {
             console.error('Error fetching report:', err);
             setError('فشل جلب التقرير: ' + err.message);
         }
-    }, [token]); // تعتمد على token فقط
+    }, [token]);
 
     // جلب تقرير المبيعات اليومية فقط افتراضياً
     const fetchDailyReport = useCallback(async () => {
@@ -160,7 +146,6 @@ const ReportsDashboard = ({ token, userRole }) => {
         try {
             await fetchReport(`${API_BASE_URL}/reports/daily-sales?date=${selectedDate}`, setDailySales);
         } catch (err) {
-            // الأخطاء يتم التعامل معها داخل fetchReport
         } finally {
             setLoading(false);
         }
@@ -190,68 +175,9 @@ const ReportsDashboard = ({ token, userRole }) => {
         }
     }, [fetchReport]);
 
-    // جلب أوردرات اليوم
-    const fetchOrdersReport = useCallback(async () => {
-        setLoadingOrders(true);
-        setError('');
-        try {
-            await fetchReport(`${API_BASE_URL}/reports/orders?date=${selectedDate}`, setOrders);
-        } catch (err) {
-        } finally {
-            setLoadingOrders(false);
-        }
-    }, [fetchReport, selectedDate]);
-
-    // حذف أوردر
-    const handleDeleteOrder = async (orderId) => {
-        if (!window.confirm('هل أنت متأكد من حذف هذا الأوردر؟')) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
-                method: 'DELETE',
-                headers: { 'x-auth-token': token }
-            });
-            if (!res.ok) throw new Error('فشل الحذف');
-            setOrders(orders => orders.filter(o => o._id !== orderId));
-        } catch (err) {
-            setError('فشل حذف الأوردر: ' + err.message);
-        }
-    };
-
-    // بدء التعديل
-    const handleEditOrder = (order) => {
-        setEditOrderId(order._id);
-        setEditOrderData({ ...order });
-    };
-    // حفظ التعديل
-    const handleSaveEditOrder = async () => {
-        try {
-            const res = await fetch(`${API_BASE_URL}/orders/${editOrderId}`, {
-                method: 'PUT',
-                headers: {
-                    'x-auth-token': token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(editOrderData)
-            });
-            if (!res.ok) throw new Error('فشل التعديل');
-            const updated = await res.json();
-            setOrders(orders => orders.map(o => o._id === editOrderId ? updated : o));
-            setEditOrderId(null);
-            setEditOrderData({});
-        } catch (err) {
-            setError('فشل تعديل الأوردر: ' + err.message);
-        }
-    };
-    // إلغاء التعديل
-    const handleCancelEdit = () => {
-        setEditOrderId(null);
-        setEditOrderData({});
-    };
-
     useEffect(() => {
         fetchDailyReport();
-        fetchOrdersReport();
-    }, [fetchDailyReport, fetchOrdersReport]);
+    }, [fetchDailyReport]);
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     if (error && userRole !== 'admin' && userRole !== 'manager') return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
@@ -287,74 +213,6 @@ const ReportsDashboard = ({ token, userRole }) => {
                             <Typography variant="body1">
                                 عدد الطلبات اليومية: <strong>{dailySales ? dailySales.totalOrders : 0}</strong>
                             </Typography>
-                        </CardContent>
-                    </Card>
-                </Grid>
-
-                {/* تقرير الأوردرات اليومية */}
-                <Grid item xs={12} md={8}>
-                    <Card variant="outlined">
-                        <CardContent>
-                            <Typography variant="h6" component="div" gutterBottom>
-                                تفاصيل الأوردرات في هذا اليوم
-                            </Typography>
-                            {loadingOrders ? <CircularProgress size={28} sx={{ display: 'block', mx: 'auto', my: 2 }} /> :
-                                orders.length === 0 ? <Typography>لا توجد أوردرات في هذا اليوم.</Typography> : (
-                                    <TableContainer component={Paper} elevation={0}>
-                                        <Table size="small">
-                                            <TableHead>
-                                                <TableRow>
-                                                    <TableCell>رقم الطلب</TableCell>
-                                                    <TableCell>الوقت</TableCell>
-                                                    <TableCell>العميل</TableCell>
-                                                    <TableCell>الإجمالي</TableCell>
-                                                    <TableCell>الحالة</TableCell>
-                                                    <TableCell>إجراءات</TableCell>
-                                                </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-                                                {orders.map(order => (
-                                                    <TableRow key={order._id}>
-                                                        {editOrderId === order._id ? <>
-                                                            <TableCell>{order.orderNumber || order._id}</TableCell>
-                                                            <TableCell>
-                                                                <input type="time" value={editOrderData.time ? new Date(editOrderData.time).toISOString().substring(11,16) : ''}
-                                                                    onChange={e => setEditOrderData(d => ({...d, time: e.target.value}))} />
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <input type="text" value={editOrderData.customerName || ''}
-                                                                    onChange={e => setEditOrderData(d => ({...d, customerName: e.target.value}))} />
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <input type="number" value={editOrderData.total || 0}
-                                                                    onChange={e => setEditOrderData(d => ({...d, total: e.target.value}))} />
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <input type="text" value={editOrderData.status || ''}
-                                                                    onChange={e => setEditOrderData(d => ({...d, status: e.target.value}))} />
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <button onClick={handleSaveEditOrder} style={{marginLeft:4}}>حفظ</button>
-                                                                <button onClick={handleCancelEdit} style={{marginLeft:4}}>إلغاء</button>
-                                                            </TableCell>
-                                                        </> : <>
-                                                            <TableCell>{order.orderNumber || order._id}</TableCell>
-                                                            <TableCell>{order.time ? new Date(order.time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : ''}</TableCell>
-                                                            <TableCell>{order.customerName || '-'}</TableCell>
-                                                            <TableCell>{order.total ? order.total.toFixed(2) : '0.00'}</TableCell>
-                                                            <TableCell>{order.status || '-'}</TableCell>
-                                                            <TableCell>
-                                                                <button onClick={() => handleEditOrder(order)} style={{marginLeft:4}}>تعديل</button>
-                                                                <button onClick={() => handleDeleteOrder(order._id)} style={{marginLeft:4, color:'red'}}>حذف</button>
-                                                            </TableCell>
-                                                        </>}
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
-                                )
-                            }
                         </CardContent>
                     </Card>
                 </Grid>
@@ -464,7 +322,7 @@ const ReportsDashboard = ({ token, userRole }) => {
                                 {/* رسم بياني لمبيعات المنتجات */}
                                 {productSales.length > 0 && (
                                   <Box sx={{ mt: 3 }}>
-                                    <Typography variant="subtitle1" sx={{ mb: 1 }}>مخطط الكميات المباعة حسب المنتج</Typography>
+                                    <Typography variant="subtitle1" sx={{ mb: 1 }}>مخطط الكميات ��لمباعة حسب الم��تج</Typography>
                                     <Bar
                                       data={{
                                         labels: productSales

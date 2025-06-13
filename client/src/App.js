@@ -46,7 +46,7 @@ const LoginScreen = ({ onLogin }) => {
           bgcolor: 'background.paper',
         }}
       >
-        <img src={logo} alt="شعار الكاشير" style={{ width: 140, height: 70, objectFit: 'cover', borderRadius: 8, marginBottom: 16, boxShadow: '0 2px 8px #1976d2' }} />
+        <img src={logo} alt="شعار الكاشير" style={{ width: 200, height: 70, objectFit: 'cover', borderRadius: 8, marginBottom: 16, boxShadow: '0 2px 8px #1976d2' }} />
         <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold', letterSpacing: 1 }}>
           تسجيل الدخول
         </Typography>
@@ -493,7 +493,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <img src={logo} alt="شعار الكاشير" style={{ width: 100, height: 48, objectFit: 'cover', borderRadius: 8, marginRight: 12, verticalAlign: 'middle', boxShadow: '0 2px 8px #1976d2' }} />
+        <img src={logo} alt="شعار الكاشير" style={{ width: 200, height: 48, objectFit: 'cover', borderRadius: 8, marginRight: 12, verticalAlign: 'middle', boxShadow: '0 2px 8px #1976d2' }} />
         {/* <h1>برنامج الكاشير</h1> */}
         {isAuthenticated && user && (
           <div className="user-info">

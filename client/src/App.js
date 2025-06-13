@@ -11,6 +11,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import ReportsDashboard from './ReportsDashboard';
 import InventoryManagement from './InventoryManagement';
 import Receipt from './Receipt';
+import logo from './assets/logo.png';
 
 // Theme is now defined and provided in index.js
 
@@ -45,7 +46,8 @@ const LoginScreen = ({ onLogin }) => {
           bgcolor: 'background.paper',
         }}
       >
-        <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
+        <img src={logo} alt="شعار الكاشير" style={{ width: 90, height: 90, borderRadius: '50%', marginBottom: 16, boxShadow: '0 2px 8px #1976d2' }} />
+        <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold', letterSpacing: 1 }}>
           تسجيل الدخول
         </Typography>
         <form onSubmit={handleSubmit} style={{ width: '100%' }}>
@@ -491,7 +493,8 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>برنامج الكاشير</h1>
+        <img src={logo} alt="شعار الكاشير" style={{ width: 60, height: 60, borderRadius: '50%', marginRight: 12, verticalAlign: 'middle', boxShadow: '0 2px 8px #1976d2' }} />
+        {/* <h1>برنامج الكاشير</h1> */}
         {isAuthenticated && user && (
           <div className="user-info">
             <span>مرحبًا، {user.username} ({user.role})</span>

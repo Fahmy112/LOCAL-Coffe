@@ -31,9 +31,9 @@ const ReportsDashboard = ({ token, userRole }) => {
             let query = [];
             if (reportType === 'daily') query.push(`date=${selectedDay}`);
             if (reportType === 'monthly') query.push(`month=${selectedMonth}`);
-            if (statusFilter !== 'all') query.push(`status=${encodeURIComponent(statusFilter)}`);
-            if (cashierFilter !== 'all') query.push(`cashier=${encodeURIComponent(cashierFilter)}`);
-            if (searchTerm.trim() !== '') query.push(`search=${encodeURIComponent(searchTerm)}`);
+            if (statusFilter && statusFilter !== 'all') query.push(`status=${encodeURIComponent(statusFilter)}`);
+            if (cashierFilter && cashierFilter !== 'all') query.push(`cashier=${encodeURIComponent(cashierFilter)}`);
+            if (searchTerm && searchTerm.trim() !== '') query.push(`search=${encodeURIComponent(searchTerm)}`);
             const url = `${API_BASE_URL}/orders${query.length ? '?' + query.join('&') : ''}`;
             const response = await fetch(url, {
                 headers: { 'x-auth-token': token }

@@ -67,7 +67,10 @@ router.get('/', auth, async (req, res) => {
             const end = new Date(date);
             end.setUTCHours(23, 59, 59, 999);
             query["$and"] = [
-                { createdAt: { $gte: start, $lte: end } }
+                { $or: [
+                    { createdAt: { $gte: start, $lte: end } },
+                    { orderDate: { $gte: start, $lte: end } }
+                ]}
             ];
         }
         // فلترة حسب الشهر
@@ -76,7 +79,12 @@ router.get('/', auth, async (req, res) => {
             const start = new Date(Number(year), Number(mon) - 1, 1);
             const end = new Date(Number(year), Number(mon), 1);
             query["$and"] = query["$and"] || [];
-            query["$and"].push({ createdAt: { $gte: start, $lt: end } });
+            query["$and"].push({
+                $or: [
+                    { createdAt: { $gte: start, $lt: end } },
+                    { orderDate: { $gte: start, $lt: end } }
+                ]
+            });
         }
         // فلترة حسب الحالة
         if (status) {

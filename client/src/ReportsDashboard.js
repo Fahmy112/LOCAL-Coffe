@@ -3,6 +3,7 @@ import {
     Container, Box, Typography, Paper, Grid, Card, CardContent, CircularProgress, Alert,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button
 } from '@mui/material';
+import * as XLSX from 'xlsx';
 import OrderDetailsDialog from './OrderDetailsDialog';
 
 const API_BASE_URL = process.env.NODE_ENV === 'production'
@@ -127,6 +128,43 @@ const ReportsDashboard = ({ token, userRole }) => {
                     <Grid item xs={12}>
                         <Card variant="outlined">
                             <CardContent>
+                                <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+                                    <Box>
+                                        <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', display: 'inline', mr: 3 }}>
+                                            عدد الطلبات: {filteredOrders.length}
+                                        </Typography>
+                                        <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', display: 'inline' }}>
+                                            إجمالي الحساب: {filteredOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toLocaleString()} ريال
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        variant="contained"
+                                        color="success"
+                                        onClick={() => {
+                                            const totalAmount = filteredOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+                                            const data = [
+                                                { 'عدد الطلبات': filteredOrders.length, 'إجمالي الحساب': totalAmount },
+                                                {}, // صف فارغ للفصل
+                                                ...filteredOrders.map(order => ({
+                                                    'رقم الطلب': order._id,
+                                                    'التاريخ': order.orderDate ? new Date(order.orderDate).toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : ''),
+                                                    'الكاشير': order.orderedBy?.username || '-',
+                                                    'الإجمالي': order.totalAmount,
+                                                    'الحالة': order.status || '-'
+                                                }))
+                                            ];
+                                            const ws = XLSX.utils.json_to_sheet(data, { skipHeader: false });
+                                            const wb = XLSX.utils.book_new();
+                                            XLSX.utils.book_append_sheet(wb, ws, 'الطلبات');
+                                            let fileName = 'طلبات';
+                                            if (reportType === 'daily') fileName += `-${selectedDay}`;
+                                            else if (reportType === 'monthly') fileName += `-${selectedMonth}`;
+                                            XLSX.writeFile(wb, `${fileName}.xlsx`);
+                                        }}
+                                    >
+                                        تصدير Excel
+                                    </Button>
+                                </Box>
                                 {filteredOrders.length === 0 ? <Typography>لا توجد طلبات.</Typography> : (
                                     <TableContainer component={Paper} elevation={0}>
                                         <Table size="small">

@@ -145,13 +145,24 @@ const ReportsDashboard = ({ token, userRole }) => {
                                             const data = [
                                                 { 'عدد الطلبات': filteredOrders.length, 'إجمالي الحساب': totalAmount },
                                                 {}, // صف فارغ للفصل
-                                                ...filteredOrders.map(order => ({
-                                                    'رقم الطلب': order._id,
-                                                    'التاريخ': order.orderDate ? new Date(order.orderDate).toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : ''),
-                                                    'الكاشير': order.orderedBy?.username || '-',
-                                                    'الإجمالي': order.totalAmount,
-                                                    'الحالة': order.status || '-'
-                                                }))
+                                                ...filteredOrders.flatMap(order => [
+                                                    {
+                                                        'رقم الطلب': order._id,
+                                                        'التاريخ': order.orderDate ? new Date(order.orderDate).toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : ''),
+                                                        'الكاشير': order.orderedBy?.username || '-',
+                                                        'الإجمالي': order.totalAmount,
+                                                        'الحالة': order.status || '-',
+                                                        'تفاصيل المنتج': ''
+                                                    },
+                                                    ...order.items.map(item => ({
+                                                        'رقم الطلب': '',
+                                                        'التاريخ': '',
+                                                        'الكاشير': '',
+                                                        'الإجمالي': '',
+                                                        'الحالة': '',
+                                                        'تفاصيل المنتج': `${item.name} | الكمية: ${item.quantity} | السعر: ${item.price} | الإجمالي: ${(item.price * item.quantity).toFixed(2)}`
+                                                    }))
+                                                ])
                                             ];
                                             const ws = XLSX.utils.json_to_sheet(data, { skipHeader: false });
                                             const wb = XLSX.utils.book_new();
@@ -166,30 +177,51 @@ const ReportsDashboard = ({ token, userRole }) => {
                                     </Button>
                                 </Box>
                                 {filteredOrders.length === 0 ? <Typography>لا توجد طلبات.</Typography> : (
-                                    <TableContainer component={Paper} elevation={0}>
-                                        <Table size="small">
+                                    <TableContainer component={Paper} elevation={0} sx={{ maxHeight: 500, overflow: 'auto' }}>
+                                        <Table size="small" sx={{ minWidth: 800, borderCollapse: 'separate', borderSpacing: 0 }}>
                                             <TableHead>
-                                                <TableRow>
-                                                    <TableCell>رقم الطلب</TableCell>
-                                                    <TableCell>التاريخ</TableCell>
-                                                    <TableCell>الكاشير</TableCell>
-                                                    <TableCell>الإجمالي</TableCell>
-                                                    <TableCell>الحالة</TableCell>
-                                                    <TableCell>تفاصيل</TableCell>
+                                                <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                                                    <TableCell sx={{ fontWeight: 'bold', borderBottom: '2px solid #1976d2' }}>رقم الطلب</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', borderBottom: '2px solid #1976d2' }}>التاريخ</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', borderBottom: '2px solid #1976d2' }}>الكاشير</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', borderBottom: '2px solid #1976d2' }}>الإجمالي</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', borderBottom: '2px solid #1976d2' }}>الحالة</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', borderBottom: '2px solid #1976d2' }}>تفاصيل</TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
                                                 {filteredOrders.map(order => (
-                                                    <TableRow key={order._id}>
-                                                        <TableCell>{order._id}</TableCell>
-                                                        <TableCell>{order.orderDate ? new Date(order.orderDate).toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : '')}</TableCell>
-                                                        <TableCell>{order.orderedBy?.username || '-'}</TableCell>
-                                                        <TableCell>{order.totalAmount}</TableCell>
-                                                        <TableCell>{order.status || '-'}</TableCell>
-                                                        <TableCell>
-                                                            <Button size="small" variant="outlined" onClick={() => { setSelectedOrder(order); setOrderDialogOpen(true); }}>تفاصيل</Button>
-                                                        </TableCell>
-                                                    </TableRow>
+                                                    <React.Fragment key={order._id}>
+                                                        <TableRow
+                                                            sx={{
+                                                                bgcolor:
+                                                                    order.status === 'مكتمل' ? '#e8f5e9' :
+                                                                    order.status === 'ملغي' ? '#ffebee' :
+                                                                    order.status === 'قيد التنفيذ' ? '#fffde7' : 'inherit',
+                                                                fontWeight: 'bold',
+                                                                borderBottom: '2px solid #1976d2'
+                                                            }}
+                                                        >
+                                                            <TableCell sx={{ fontWeight: 'bold' }}>{order._id}</TableCell>
+                                                            <TableCell>{order.orderDate ? new Date(order.orderDate).toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : '')}</TableCell>
+                                                            <TableCell>{order.orderedBy?.username || '-'}</TableCell>
+                                                            <TableCell>{order.totalAmount}</TableCell>
+                                                            <TableCell>{order.status || '-'}</TableCell>
+                                                            <TableCell>
+                                                                <Button size="small" variant="outlined" onClick={() => { setSelectedOrder(order); setOrderDialogOpen(true); }}>تفاصيل</Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                        {/* تفاصيل المنتجات */}
+                                                        {order.items && order.items.length > 0 && order.items.map((item, idx) => (
+                                                            <TableRow key={order._id + '-item-' + idx} sx={{ bgcolor: '#fafafa' }}>
+                                                                <TableCell colSpan={2} sx={{ pl: 6, fontSize: '0.95em', color: '#1976d2' }}>{item.name}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.95em' }}>الكمية: {item.quantity}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.95em' }}>السعر: {item.price}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.95em' }}>الإجمالي: {(item.price * item.quantity).toFixed(2)}</TableCell>
+                                                                <TableCell />
+                                                            </TableRow>
+                                                        ))}
+                                                    </React.Fragment>
                                                 ))}
                                             </TableBody>
                                         </Table>

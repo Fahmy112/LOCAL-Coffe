@@ -15,12 +15,27 @@ const ReportsDashboard = ({ token, userRole }) => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [orderDialogOpen, setOrderDialogOpen] = useState(false);
     const [error, setError] = useState('');
+    // --- فلترة وبحث ---
+    const [reportType, setReportType] = useState('daily'); // 'daily' or 'monthly'
+    const [selectedDay, setSelectedDay] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [cashierFilter, setCashierFilter] = useState('all');
 
     const fetchOrders = useCallback(async () => {
         setLoadingOrders(true);
         setError('');
         try {
-            const response = await fetch(`${API_BASE_URL}/orders`, {
+            // بناء الاستعلام بناءً على الفلاتر
+            let query = [];
+            if (reportType === 'daily') query.push(`date=${selectedDay}`);
+            if (reportType === 'monthly') query.push(`month=${selectedMonth}`);
+            if (statusFilter !== 'all') query.push(`status=${encodeURIComponent(statusFilter)}`);
+            if (cashierFilter !== 'all') query.push(`cashier=${encodeURIComponent(cashierFilter)}`);
+            if (searchTerm.trim() !== '') query.push(`search=${encodeURIComponent(searchTerm)}`);
+            const url = `${API_BASE_URL}/orders${query.length ? '?' + query.join('&') : ''}`;
+            const response = await fetch(url, {
                 headers: { 'x-auth-token': token }
             });
             if (!response.ok) {
@@ -34,7 +49,7 @@ const ReportsDashboard = ({ token, userRole }) => {
         } finally {
             setLoadingOrders(false);
         }
-    }, [token]);
+    }, [token, reportType, selectedDay, selectedMonth, statusFilter, cashierFilter, searchTerm]);
 
     useEffect(() => {
         fetchOrders();
@@ -43,15 +58,72 @@ const ReportsDashboard = ({ token, userRole }) => {
     if (loadingOrders) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     if (error) return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
 
+    // استخراج الكاشيرين من الطلبات
+    const cashierList = ['all', ...Array.from(new Set(orders.map(o => o.orderedBy?.username).filter(Boolean)))];
+
+    // فلترة الطلبات حسب البحث والفلاتر
+    const filteredOrders = orders.filter(order => {
+        const matchesSearch =
+            searchTerm.trim() === '' ||
+            order._id.includes(searchTerm) ||
+            (order.orderedBy?.username && order.orderedBy.username.includes(searchTerm));
+        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+        const matchesCashier = cashierFilter === 'all' || order.orderedBy?.username === cashierFilter;
+        // فلترة حسب اليوم أو الشهر
+        let matchesDate = true;
+        if (reportType === 'daily') {
+            const orderDate = new Date(order.orderDate || order.createdAt).toISOString().slice(0, 10);
+            matchesDate = orderDate === selectedDay;
+        } else if (reportType === 'monthly') {
+            const orderMonth = new Date(order.orderDate || order.createdAt).toISOString().slice(0, 7);
+            matchesDate = orderMonth === selectedMonth;
+        }
+        return matchesSearch && matchesStatus && matchesCashier && matchesDate;
+    });
+
     return (
         <React.Fragment>
             <Container maxWidth="lg" sx={{ mt: 4, p: 3, boxShadow: 3, borderRadius: 2, bgcolor: 'background.paper' }}>
                 <Typography variant="h4" gutterBottom>تقرير الطلبات التفصيلي</Typography>
+                {/* واجهة الفلترة والبحث */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                    <Box>
+                        <label>
+                            <input type="radio" value="daily" checked={reportType === 'daily'} onChange={() => setReportType('daily')} /> يومي
+                        </label>
+                        <label style={{ marginLeft: 12 }}>
+                            <input type="radio" value="monthly" checked={reportType === 'monthly'} onChange={() => setReportType('monthly')} /> شهري
+                        </label>
+                    </Box>
+                    {reportType === 'daily' ? (
+                        <input type="date" value={selectedDay} onChange={e => setSelectedDay(e.target.value)} />
+                    ) : (
+                        <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} />
+                    )}
+                    <input
+                        type="text"
+                        placeholder="بحث برقم الطلب أو الكاشير"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        style={{ padding: 6, borderRadius: 4, border: '1px solid #ccc', minWidth: 180 }}
+                    />
+                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                        <option value="all">كل الحالات</option>
+                        <option value="مكتمل">مكتمل</option>
+                        <option value="ملغي">ملغي</option>
+                        <option value="قيد التنفيذ">قيد التنفيذ</option>
+                    </select>
+                    <select value={cashierFilter} onChange={e => setCashierFilter(e.target.value)}>
+                        {cashierList.map(cashier => (
+                            <option key={cashier} value={cashier}>{cashier === 'all' ? 'كل الكاشيرين' : cashier}</option>
+                        ))}
+                    </select>
+                </Box>
                 <Grid container spacing={3} sx={{ mb: 4 }}>
                     <Grid item xs={12}>
                         <Card variant="outlined">
                             <CardContent>
-                                {orders.length === 0 ? <Typography>لا توجد طلبات.</Typography> : (
+                                {filteredOrders.length === 0 ? <Typography>لا توجد طلبات.</Typography> : (
                                     <TableContainer component={Paper} elevation={0}>
                                         <Table size="small">
                                             <TableHead>
@@ -65,7 +137,7 @@ const ReportsDashboard = ({ token, userRole }) => {
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {orders.map(order => (
+                                                {filteredOrders.map(order => (
                                                     <TableRow key={order._id}>
                                                         <TableCell>{order._id}</TableCell>
                                                         <TableCell>{order.orderDate ? new Date(order.orderDate).toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : '')}</TableCell>

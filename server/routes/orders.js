@@ -51,17 +51,62 @@ router.post(
 );
 
 // @route   GET /api/orders
-// @desc    Get all orders (for admin/manager)
+// @desc    Get all orders (for admin/manager) with filters
 // @access  Private (Admin or Manager)
 router.get('/', auth, async (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'manager') {
         return res.status(403).json({ msg: 'ليس لديك صلاحية لعرض الطلبات.' });
     }
     try {
+        const { date, month, status, cashier, search } = req.query;
+        let query = {};
+        // فلترة حسب اليوم
+        if (date) {
+            const start = new Date(date);
+            start.setUTCHours(0, 0, 0, 0);
+            const end = new Date(date);
+            end.setUTCHours(23, 59, 59, 999);
+            query["$and"] = [
+                { createdAt: { $gte: start, $lte: end } }
+            ];
+        }
+        // فلترة حسب الشهر
+        if (month) {
+            const [year, mon] = month.split('-');
+            const start = new Date(Number(year), Number(mon) - 1, 1);
+            const end = new Date(Number(year), Number(mon), 1);
+            query["$and"] = query["$and"] || [];
+            query["$and"].push({ createdAt: { $gte: start, $lt: end } });
+        }
+        // فلترة حسب الحالة
+        if (status) {
+            query.status = status;
+        }
+        // فلترة حسب الكاشير
+        if (cashier) {
+            // سنبحث باسم المستخدم في orderedBy
+            const users = await require('../models/User').find({ username: cashier });
+            if (users.length > 0) {
+                query.orderedBy = users[0]._id;
+            } else {
+                // إذا لم يوجد كاشير بهذا الاسم، أرجع نتائج فارغة
+                return res.json([]);
+            }
+        }
+        // فلترة بالبحث
+        if (search) {
+            // بحث برقم الطلب أو اسم الكاشير
+            const users = await require('../models/User').find({ username: { $regex: search, $options: 'i' } });
+            const userIds = users.map(u => u._id);
+            query["$or"] = [
+                { _id: search },
+                { orderedBy: { $in: userIds } }
+            ];
+        }
         // جلب الطلبات وترتيبها حسب التاريخ وتضمين معلومات المستخدم
-        const orders = await Order.find()
-                                   .populate('orderedBy', 'username role') // جلب اسم ودور المستخدم الذي قام بالطلب
-                                   .sort({ orderDate: -1 }); // أحدث الطلبات أولاً
+        const orders = await Order.find(query)
+                                   .populate('orderedBy', 'username role')
+                                   .sort({ createdAt: -1 });
         res.json(orders);
     } catch (err) {
         console.error(err.message);

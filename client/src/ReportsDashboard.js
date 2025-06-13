@@ -16,7 +16,7 @@ const ReportsDashboard = ({ token, userRole }) => {
     const [orderDialogOpen, setOrderDialogOpen] = useState(false);
     const [error, setError] = useState('');
     // --- فلترة وبحث ---
-    const [reportType, setReportType] = useState('daily'); // 'daily' or 'monthly'
+    const [reportType, setReportType] = useState('all'); // 'all' or 'daily' or 'monthly'
     const [selectedDay, setSelectedDay] = useState(new Date().toISOString().split('T')[0]);
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
     const [searchTerm, setSearchTerm] = useState('');
@@ -31,6 +31,7 @@ const ReportsDashboard = ({ token, userRole }) => {
             let query = [];
             if (reportType === 'daily') query.push(`date=${selectedDay}`);
             if (reportType === 'monthly') query.push(`month=${selectedMonth}`);
+            // إذا كان reportType === 'all' لا ترسل date ولا month
             if (statusFilter && statusFilter !== 'all') query.push(`status=${encodeURIComponent(statusFilter)}`);
             if (cashierFilter && cashierFilter !== 'all') query.push(`cashier=${encodeURIComponent(cashierFilter)}`);
             if (searchTerm && searchTerm.trim() !== '') query.push(`search=${encodeURIComponent(searchTerm)}`);
@@ -89,6 +90,9 @@ const ReportsDashboard = ({ token, userRole }) => {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                     <Box>
                         <label>
+                            <input type="radio" value="all" checked={reportType === 'all'} onChange={() => setReportType('all')} /> الكل
+                        </label>
+                        <label style={{ marginLeft: 12 }}>
                             <input type="radio" value="daily" checked={reportType === 'daily'} onChange={() => setReportType('daily')} /> يومي
                         </label>
                         <label style={{ marginLeft: 12 }}>
@@ -97,9 +101,9 @@ const ReportsDashboard = ({ token, userRole }) => {
                     </Box>
                     {reportType === 'daily' ? (
                         <input type="date" value={selectedDay} onChange={e => setSelectedDay(e.target.value)} />
-                    ) : (
+                    ) : reportType === 'monthly' ? (
                         <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} />
-                    )}
+                    ) : null}
                     <input
                         type="text"
                         placeholder="بحث برقم الطلب أو الكاشير"

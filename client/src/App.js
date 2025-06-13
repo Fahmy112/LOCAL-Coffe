@@ -493,7 +493,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <img src={logo} alt="شعار الكاشير" style={{ width: 200, height: 48, objectFit: 'cover', borderRadius: 8, marginRight: 12, verticalAlign: 'middle', boxShadow: '0 2px 8px #1976d2' }} />
+        <img src={logo} alt="شعار الكاشير" style={{ width: 240, height: 70, objectFit: 'cover', borderRadius: 8, marginRight: 12, verticalAlign: 'middle', boxShadow: '0 2px 8px #1976d2' }} />
         {/* <h1>برنامج الكاشير</h1> */}
         {isAuthenticated && user && (
           <div className="user-info">

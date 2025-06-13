@@ -88,7 +88,7 @@ const ReportsDashboard = ({ token, userRole }) => {
                 <Typography variant="h4" gutterBottom>تقرير الطلبات التفصيلي</Typography>
                 {/* واجهة الفلترة والبحث */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                    <Box>
+                    <Box component="div">
                         <label>
                             <input type="radio" value="all" checked={reportType === 'all'} onChange={() => setReportType('all')} /> الكل
                         </label>

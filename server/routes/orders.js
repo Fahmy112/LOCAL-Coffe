@@ -95,13 +95,23 @@ router.get('/', auth, async (req, res) => {
         }
         // فلترة بالبحث
         if (search) {
-            // بحث برقم الطلب أو اسم الكاشير
+            const orConditions = [];
+            // بحث برقم الطلب (ObjectId فقط إذا كان search طول 24 وحروف hex)
+            if (/^[a-fA-F0-9]{24}$/.test(search)) {
+                orConditions.push({ _id: search });
+            }
+            // بحث باسم الكاشير
             const users = await require('../models/User').find({ username: { $regex: search, $options: 'i' } });
             const userIds = users.map(u => u._id);
-            query["$or"] = [
-                { _id: search },
-                { orderedBy: { $in: userIds } }
-            ];
+            if (userIds.length > 0) {
+                orConditions.push({ orderedBy: { $in: userIds } });
+            }
+            if (orConditions.length > 0) {
+                query["$or"] = orConditions;
+            } else {
+                // إذا لم يوجد أي تطابق، أرجع نتائج فارغة
+                return res.json([]);
+            }
         }
         // جلب الطلبات وترتيبها حسب التاريخ وتضمين معلومات المستخدم
         const orders = await Order.find(query)
